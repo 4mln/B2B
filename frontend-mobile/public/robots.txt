@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://b2b-marketplace.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_expo/
+
+# Allow important pages
+Allow: /
+Allow: /products/
+Allow: /guilds/
+Allow: /search/

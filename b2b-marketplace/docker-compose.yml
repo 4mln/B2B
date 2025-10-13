@@ -1,0 +1,81 @@
+services:
+  api:
+    build: .
+    command: >
+      uvicorn app.main:app 
+      --host 0.0.0.0 --port 8000 
+      --reload
+      --reload-exclude .git
+      --reload-exclude .github
+      --reload-exclude env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/marketplace
+      - ENVIRONMENT=development
+      # Optionally set SECRET_KEY for non-development runs. Keep blank for local development.
+      # - SECRET_KEY=your-very-secret-key-with-32+chars
+    volumes:
+      - .:/code
+      - backups:/backups
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+
+  db:
+    image: pgvector/pgvector:pg16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: marketplace
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts/db-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d marketplace -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "localhost", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 5
+
+  backup:
+    image: alpine:3.18
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["/backups/scripts/db_backup.sh --once"]
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - backups:/backups
+      - postgres_data:/var/lib/postgresql/data:ro
+    restart: "no"
+
+volumes:
+  postgres_data:
+  backups:

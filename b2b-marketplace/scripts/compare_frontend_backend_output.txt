@@ -1,0 +1,6 @@
+c:\1\b2b-marketplace\scripts\compare_frontend_backend.py:83: SyntaxWarning: invalid escape sequence '\/'
+  backend_routes.add(p.rstrip('\/'))
+c:\1\b2b-marketplace\scripts\compare_frontend_backend.py:90: SyntaxWarning: invalid escape sequence '\{'
+  regex = regex.replace('\{', '{').replace('\}', '}')
+c:\1\b2b-marketplace\scripts\compare_frontend_backend.py:90: SyntaxWarning: invalid escape sequence '\}'
+  regex = regex.replace('\{', '{').replace('\}', '}')

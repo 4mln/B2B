@@ -1,0 +1,33 @@
+{
+  "update_timestamp": "2025-10-04T10:30:00Z",
+  "update_type": "crud_operations_update",
+  "files_updated": [
+    "plugins\\admin\\crud.py",
+    "plugins\\ads\\crud.py",
+    "plugins\\analytics\\crud.py",
+    "plugins\\buyer\\crud.py",
+    "plugins\\cart\\crud.py",
+    "plugins\\gamification\\crud.py",
+    "plugins\\messaging\\crud.py",
+    "plugins\\mobile\\crud.py",
+    "plugins\\notifications\\crud.py",
+    "plugins\\orders\\crud.py",
+    "plugins\\payments\\crud.py",
+    "plugins\\products\\crud.py",
+    "plugins\\ratings\\crud.py",
+    "plugins\\rfq\\crud.py",
+    "plugins\\search\\crud.py",
+    "plugins\\seller\\crud.py",
+    "plugins\\subscriptions\\crud.py",
+    "plugins\\user\\crud.py",
+    "plugins\\wallet\\crud.py"
+  ],
+  "total_files_processed": 25,
+  "successful_updates": 19,
+  "next_steps": [
+    "Update route handlers to pass new foreign key parameters",
+    "Test all CRUD operations with new user model",
+    "Update authentication middleware",
+    "Test plugin endpoints"
+  ]
+}

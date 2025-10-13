@@ -1,0 +1,40 @@
+{
+  "fix_timestamp": "2025-10-04T14:00:00Z",
+  "fix_type": "fix_all_model_indentation",
+  "files_fixed": [
+    "plugins\\admin\\models.py",
+    "plugins\\ads\\models.py",
+    "plugins\\advanced_features\\models.py",
+    "plugins\\analytics\\models.py",
+    "plugins\\auth\\models.py",
+    "plugins\\cart\\models.py",
+    "plugins\\cms\\models.py",
+    "plugins\\compliance\\models.py",
+    "plugins\\escrow\\models.py",
+    "plugins\\gamification\\models.py",
+    "plugins\\guilds\\models.py",
+    "plugins\\i18n\\models.py",
+    "plugins\\messaging\\models.py",
+    "plugins\\mobile\\models.py",
+    "plugins\\notifications\\models.py",
+    "plugins\\orders\\models.py",
+    "plugins\\payments\\models.py",
+    "plugins\\pricing\\models.py",
+    "plugins\\products\\models.py",
+    "plugins\\ratings\\models.py",
+    "plugins\\reports\\models.py",
+    "plugins\\rfq\\models.py",
+    "plugins\\search\\models.py",
+    "plugins\\subscriptions\\models.py",
+    "plugins\\test_connections\\models.py",
+    "plugins\\user\\models.py",
+    "plugins\\wallet\\models.py"
+  ],
+  "total_files_processed": 27,
+  "successful_fixes": 27,
+  "next_steps": [
+    "Test application import",
+    "Test all plugin endpoints",
+    "Verify no broken relationships"
+  ]
+}

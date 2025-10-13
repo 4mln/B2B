@@ -1,0 +1,12 @@
+Using API prefix: /api/v1
+
+No routes found under prefix /api/v1 ù available routes (first 50):
+
+/openapi.json
+/api/docs
+/docs/oauth2-redirect
+/api/redoc
+/api/uploads/presign
+/health
+/manifest.json
+/service-worker.js

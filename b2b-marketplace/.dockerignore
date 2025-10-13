@@ -1,0 +1,29 @@
+.env
+.env.*
+.git
+.github
+env/
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Node and frontend
+node_modules
+frontend-mobile/node_modules
+
+# Build artifacts
+build/
+dist/
+
+# Backups
+backups
+
+# IDE
+.vscode
+.idea
+.DS_Store
+
+# Tests and local files
+tests
+*.log

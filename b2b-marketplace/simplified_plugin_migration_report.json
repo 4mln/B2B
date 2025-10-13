@@ -1,0 +1,58 @@
+{
+  "migration_timestamp": "2025-10-04T10:10:06.478134",
+  "migration_type": "simplified_plugin_migration",
+  "statistics": {
+    "tables_updated": 26,
+    "foreign_keys_added": 30,
+    "data_migrated": 0,
+    "errors": [
+      "ratings: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column ratings.seller_id does not exist\n[SQL: \n                    UPDATE ratings \n                    SET new_seller_id = lm.new_user_id\n                    FROM legacy_mapping lm\n                    WHERE ratings.seller_id = lm.legacy_id \n                    AND lm.legacy_table = 'sellers'\n                ]\n(Background on this error at: https://sqlalche.me/e/20/f405)",
+      "audit_logs: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column audit_logs.user_id does not exist\n[SQL: \n                    UPDATE audit_logs \n                    SET new_user_id = lm.new_user_id\n                    FROM legacy_mapping lm\n                    WHERE audit_logs.user_id = lm.legacy_id \n                    AND lm.legacy_table = 'users'\n                ]\n(Background on this error at: https://sqlalche.me/e/20/f405)"
+    ]
+  },
+  "migrated_tables": [
+    "orders",
+    "products",
+    "payments",
+    "ratings",
+    "rfq",
+    "quotes",
+    "cart",
+    "chat_rooms",
+    "chat_participants",
+    "messages",
+    "chat_invitations",
+    "notifications",
+    "user_notification_preferences",
+    "notification_subscriptions",
+    "admin_users",
+    "audit_logs",
+    "support_tickets",
+    "support_messages",
+    "content_moderation",
+    "ads",
+    "ad_campaigns",
+    "ad_impressions",
+    "ad_clicks",
+    "ad_conversions",
+    "wallets",
+    "withdrawal_requests",
+    "user_subscriptions",
+    "analytics_events",
+    "user_points",
+    "user_badges"
+  ],
+  "migration_summary": {
+    "total_tables": 30,
+    "tables_updated": 26,
+    "foreign_keys_added": 30,
+    "errors": 2
+  },
+  "next_steps": [
+    "Update plugin model files to use new foreign key columns",
+    "Update plugin CRUD operations to use new user references",
+    "Update plugin routes to handle new user model",
+    "Test all plugin endpoints",
+    "Update frontend to handle new user references"
+  ]
+}

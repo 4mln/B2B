@@ -1,0 +1,20 @@
+{
+  "fix_timestamp": "2025-10-04T13:00:00Z",
+  "fix_type": "plugin_models_new_user_id_columns",
+  "files_fixed": [
+    "plugins\\ads\\models.py",
+    "plugins\\analytics\\models.py",
+    "plugins\\cart\\models.py",
+    "plugins\\gamification\\models.py",
+    "plugins\\notifications\\models.py",
+    "plugins\\payments\\models.py",
+    "plugins\\wallet\\models.py"
+  ],
+  "total_files_processed": 27,
+  "successful_fixes": 7,
+  "next_steps": [
+    "Test application import",
+    "Test all plugin endpoints",
+    "Verify no broken relationships"
+  ]
+}

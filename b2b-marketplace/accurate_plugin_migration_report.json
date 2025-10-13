@@ -1,0 +1,57 @@
+{
+  "migration_timestamp": "2025-10-04T10:11:21.537297",
+  "migration_type": "accurate_plugin_migration",
+  "statistics": {
+    "tables_updated": 27,
+    "foreign_keys_added": 30,
+    "data_migrated": 0,
+    "errors": [
+      "orders: (sqlalchemy.dialects.postgresql.asyncpg.Error) <class 'asyncpg.exceptions.InFailedSQLTransactionError'>: current transaction is aborted, commands ignored until end of transaction block\n[SQL: \n            SELECT EXISTS (\n                SELECT FROM information_schema.columns \n                WHERE table_name = 'orders' AND column_name = 'seller_id'\n            );\n        ]\n(Background on this error at: https://sqlalche.me/e/20/dbapi)",
+      "chat_invitations: (sqlalchemy.dialects.postgresql.asyncpg.Error) <class 'asyncpg.exceptions.InFailedSQLTransactionError'>: current transaction is aborted, commands ignored until end of transaction block\n[SQL: \n                    ALTER TABLE chat_invitations \n                    ADD COLUMN IF NOT EXISTS new_invited_user_id UUID\n                ]\n(Background on this error at: https://sqlalche.me/e/20/dbapi)"
+    ]
+  },
+  "migrated_tables": [
+    "orders",
+    "products",
+    "payments",
+    "ratings",
+    "rfqs",
+    "quotes",
+    "carts",
+    "chat_rooms",
+    "chat_participants",
+    "messages",
+    "chat_invitations",
+    "notifications",
+    "user_notification_preferences",
+    "notification_subscriptions",
+    "admin_users",
+    "support_tickets",
+    "support_messages",
+    "content_moderation",
+    "ads",
+    "ad_campaigns",
+    "ad_impressions",
+    "ad_clicks",
+    "ad_conversions",
+    "wallets",
+    "withdrawal_requests",
+    "user_subscriptions",
+    "analytics_events",
+    "user_points",
+    "user_badges"
+  ],
+  "migration_summary": {
+    "total_tables": 29,
+    "tables_updated": 27,
+    "foreign_keys_added": 30,
+    "errors": 2
+  },
+  "next_steps": [
+    "Update plugin model files to use new foreign key columns",
+    "Update plugin CRUD operations to use new user references",
+    "Update plugin routes to handle new user model",
+    "Test all plugin endpoints",
+    "Update frontend to handle new user references"
+  ]
+}
