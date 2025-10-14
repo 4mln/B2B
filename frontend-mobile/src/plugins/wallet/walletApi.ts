@@ -192,9 +192,10 @@ export const walletApi = {
    */
   async getWalletBalance(walletId: string): Promise<ApiResponse<{ balance: number; currency: string }>> {
     try {
-      const response = await apiClient.get(`/wallet/${walletId}/balance`);
+      const response = await apiClient.get(`/wallet/${walletId}`);
+      const { balance, currency } = response.data;
       return {
-        data: response.data,
+        data: { balance, currency },
         success: true,
       };
     } catch (error: any) {

@@ -63,9 +63,10 @@ export const walletService = {
    */
   async getBalance(): Promise<ApiResponse<WalletBalance>> {
     try {
-      const response = await apiClient.get('/wallet/balance');
+      const response = await apiClient.get('/wallet/me');
+      const wallets = response.data.wallets || [];
       return {
-        data: response.data,
+        data: wallets[0] || null, // Return first wallet or null
         success: true,
       };
     } catch (error: any) {
@@ -79,9 +80,9 @@ export const walletService = {
   /**
    * Get transaction history
    */
-  async getTransactions(filters?: TransactionFilters): Promise<ApiResponse<TransactionResponse>> {
+  async getTransactions(walletId: string, filters?: TransactionFilters): Promise<ApiResponse<TransactionResponse>> {
     try {
-      const response = await apiClient.get('/wallet/transactions', { params: filters });
+      const response = await apiClient.get(`/wallet/${walletId}/transactions`, { params: filters });
       return {
         data: response.data,
         success: true,
@@ -97,9 +98,9 @@ export const walletService = {
   /**
    * Top up wallet
    */
-  async topUp(data: TopUpRequest): Promise<ApiResponse<Transaction>> {
+  async deposit(data: TopUpRequest): Promise<ApiResponse<Transaction>> {
     try {
-      const response = await apiClient.post('/wallet/top-up', data);
+      const response = await apiClient.post('/wallet/deposit', data);
       return {
         data: response.data,
         success: true,

@@ -31,9 +31,9 @@ export const API_ENDPOINTS = {
     SEND_MESSAGE: '/chat/conversations/:id/messages',
   },
   WALLET: {
-    BALANCE: '/wallet/balance',
-    TRANSACTIONS: '/wallet/transactions',
-    TOP_UP: '/wallet/top-up',
+    ME: '/wallet/me',
+    TRANSACTIONS: '/wallet/{id}/transactions',
+    DEPOSIT: '/wallet/deposit',
     WITHDRAW: '/wallet/withdraw',
   },
   RFQ: {

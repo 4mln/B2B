@@ -23,9 +23,12 @@ class WalletPlugin(Plugin):
         app.include_router(self.router)
     
     async def init_db(self, engine) -> None:
-        """Initialize any database tables or data needed for the wallet plugin."""
-        # No initialization needed as tables are created by Alembic migrations
-        pass
+        """Initialize database tables and seed initial data."""
+        from app.db.session import get_db_sync
+        from .seeders.currencies import seed_supported_currencies
+
+        async with get_db_sync() as db:
+            await seed_supported_currencies(db)
     
     async def on_startup(self, app: FastAPI) -> None:
         """Perform any startup tasks for the wallet plugin."""
