@@ -22,7 +22,12 @@ export const ensureOnlineOrMessage = async (): Promise<boolean> => {
       const backLabel = i18n.t('common.back');
       const title = i18n.t('errors.networkErrorTitle', 'Connection Error');
       const message = i18n.t('errors.networkOffline', 'No internet connection. Please check your network.');
-      useMessageBoxStore.getState().show({ title, message, actions: [{ label: backLabel }] });
+      useMessageBoxStore.getState().show({
+        type: 'error',
+        title,
+        message,
+        actions: [{ label: backLabel }]
+      });
       return false;
     }
 
@@ -32,13 +37,23 @@ export const ensureOnlineOrMessage = async (): Promise<boolean> => {
     const backLabel = i18n.t('common.back');
     const title = i18n.t('errors.networkErrorTitle', 'Connection Error');
     const message = i18n.t('errors.serverMaintenance', 'Currently servers are not reachable or under maintenance. We will be back soon.');
-    useMessageBoxStore.getState().show({ title, message, actions: [{ label: backLabel }] });
+    useMessageBoxStore.getState().show({
+      type: 'error',
+      title,
+      message,
+      actions: [{ label: backLabel }]
+    });
     return false;
   } catch {
     const backLabel = i18n.t('common.back');
     const title = i18n.t('errors.networkErrorTitle', 'Connection Error');
     const message = i18n.t('errors.unknownError', 'An unknown error occurred.');
-    useMessageBoxStore.getState().show({ title, message, actions: [{ label: backLabel }] });
+    useMessageBoxStore.getState().show({
+      type: 'error',
+      title,
+      message,
+      actions: [{ label: backLabel }]
+    });
     return false;
   }
 };

@@ -4,14 +4,14 @@ import { validateIranianMobileNumber } from '@/utils/validation';
 import { Ionicons } from '@expo/vector-icons';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    TouchableOpacity
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableOpacity
 } from 'react-native';
 import { Stack as Box, H1 as Heading, XStack as HStack, Input, Spinner, Text, YStack as VStack } from 'tamagui';
 import * as yup from 'yup';
@@ -29,7 +29,11 @@ type LoginScreenProps = {
 
 type LoginFormValues = { phone: string };
 
-export default function LoginScreen(props: LoginScreenProps) {
+export interface LoginScreenRef {
+  focusPhoneInput: () => void;
+}
+
+const LoginScreen = forwardRef<LoginScreenRef, LoginScreenProps>((props, ref) => {
   const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -52,8 +56,43 @@ export default function LoginScreen(props: LoginScreenProps) {
     defaultValues: { phone: props.initialPhone || '' },
   });
   const watchedPhone = watch('phone');
-  
+  const phoneInputRef = useRef<any>(null);
+
   const sendOTPMutation = useSendOTP();
+
+  // RTL mode detection for Persian/Farsi
+  console.log('🔍 LoginScreen: Setting up RTL support for Persian/Farsi');
+
+  // Expose focus method to parent component
+  useImperativeHandle(ref, () => ({
+    focusPhoneInput: () => {
+      console.log('🔍 LoginScreen: focusPhoneInput called');
+
+      // Try to focus by dispatching focus event to document
+      // This is a workaround for when direct focus doesn't work
+      setTimeout(() => {
+        const activeElement = document.activeElement;
+        console.log('🔍 LoginScreen: Current active element:', activeElement);
+
+        // Try to find the input by tag name or class
+        const inputs = document.querySelectorAll('input[type="text"], input[type="tel"]');
+        console.log('🔍 LoginScreen: Found inputs:', inputs.length);
+
+        if (inputs.length > 0) {
+          // Focus the first input found
+          (inputs[0] as HTMLInputElement).focus();
+          console.log('🔍 LoginScreen: Focused input via querySelector');
+        }
+      }, 100);
+    }
+  }));
+
+  // Also try to focus when component mounts if it should be focused
+  useEffect(() => {
+    if (phoneInputRef.current) {
+      console.log('🔍 LoginScreen: Component mounted, input ref available');
+    }
+  }, []);
 
   const handleSendOTP = async () => {
     // Validate phone number using the Iranian mobile number validator
@@ -142,17 +181,19 @@ export default function LoginScreen(props: LoginScreenProps) {
             <Box
               width={80}
               height={80}
-              borderRadius="$full"
+              borderRadius={40}
               backgroundColor="$primary500"
               alignItems="center"
               justifyContent="center"
             >
-              <Ionicons name="person" size={40} color="white" />
+              <Ionicons name="person" size={45} color="white" />
             </Box>
             <VStack alignItems="center" space="$sm">
-              <Heading size="lg" textAlign="center" color={isDark ? '$textDark100' : '$textLight900'}>
+              <Heading fontSize="$xs" textAlign="center" color={isDark ? '$textDark100' : '$textLight900'}>
                 {t('login.title')}
               </Heading>
+              {/* Empty space after H1 */}
+              <Box height={20} />
               <Text
                 textAlign="center"
                 color={isDark ? '$textDark300' : '$textLight600'}
@@ -167,38 +208,42 @@ export default function LoginScreen(props: LoginScreenProps) {
           {/* Form */}
           <VStack space="$lg">
             <VStack space="$sm">
-              <Text
-                fontSize="$sm"
-                fontWeight="$medium"
-                color={isDark ? '$textDark100' : '$textLight900'}
-                textAlign="right"
-              >
-                {t('login.phone')}
-              </Text>
+
               <Controller
                 control={control}
                 name="phone"
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    placeholder={t('login.phonePlaceholder')}
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    keyboardType="phone-pad"
-                    autoFocus
-                    height={44}
-                    borderColor={errors.phone ? '$error500' : (isDark ? '$borderLight300' : '$borderLight300')}
-                    backgroundColor={isDark ? '$backgroundDark0' : '$backgroundLight0'}
-                    borderRadius="$lg"
-                    fontSize="$sm"
-                    color={isDark ? '$textDark100' : '$textLight900'}
-                    textAlign="left"
-                    placeholderTextColor={isDark ? '$textDark400' : '$textLight500'}
-                  />
+                  <VStack space="$xs">
+                    <Input
+                      ref={phoneInputRef}
+                      placeholder={t('login.phonePlaceholder')}
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      keyboardType="phone-pad"
+                      autoFocus
+                      height={38}
+                      borderWidth={2}
+                      borderColor={errors.phone ? '$error500' : (isDark ? '$borderLight300' : '$borderLight200')}
+                      backgroundColor={isDark ? '$backgroundDark0' : '$backgroundLight0'}
+                      borderRadius={12}
+                      fontSize="$sm"
+                      color={isDark ? '$textDark100' : '$textLight900'}
+                      textAlign="center"
+                      placeholderTextColor={isDark ? '$textDark400' : '$textLight500'}
+                      onSubmitEditing={handleSubmit(handleSendOTP)}
+                      returnKeyType="go"
+                      blurOnSubmit={false}
+                      paddingHorizontal="$md"
+                      paddingVertical="$sm"
+                      width="60%"
+                      alignSelf="center"
+                    />
+                  </VStack>
                 )}
               />
               {!!errors.phone?.message && (
-                <Text color="$error500" fontSize="$xs" textAlign="right">
+                <Text color="$error500" fontSize="$xs" textAlign="center">
                   {String(errors.phone.message)}
                 </Text>
               )}
@@ -213,7 +258,10 @@ export default function LoginScreen(props: LoginScreenProps) {
                 alignItems: 'center',
                 marginTop: 12,
                 opacity: (!watchedPhone?.trim() || isLoading) ? 0.6 : 1,
-                minHeight: 44,
+                minHeight: 35,
+                width: '45%',
+                height: 35,
+                alignSelf: 'center',
               }}
               onPress={handleSubmit(handleSendOTP)}
               disabled={isLoading}
@@ -233,6 +281,9 @@ export default function LoginScreen(props: LoginScreenProps) {
                 </Text>
               </HStack>
             </TouchableOpacity>
+
+            {/* Empty space after button */}
+            <Box height={20} />
           </VStack>
 
           {/* Footer */}
@@ -258,4 +309,8 @@ export default function LoginScreen(props: LoginScreenProps) {
       </KeyboardAvoidingView>
     </Box>
   );
-}
+});
+
+LoginScreen.displayName = 'LoginScreen';
+
+export default LoginScreen;

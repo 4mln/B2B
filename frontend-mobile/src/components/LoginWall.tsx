@@ -1,4 +1,5 @@
 import { MessageBox } from '@/components/MessageBox';
+import { useThemeContext } from '@/components/ThemeProvider';
 import { showErrorMessage, showInfoMessage, showWarningMessage, useMessageBoxStore } from '@/context/messageBoxStore';
 import { useAuth, useSendOTP, useVerifyOTP } from '@/features/auth/hooks';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -15,6 +16,7 @@ import SignupScreen from '../../app/auth/signup';
 // Theme switcher component
 export const ThemeSwitcher: React.FC = () => {
   const colorScheme = useColorScheme();
+  const { setTheme, toggleDarkMode } = useThemeContext();
   const [isPanelVisible, setIsPanelVisible] = React.useState(false);
   const panelAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -41,7 +43,7 @@ export const ThemeSwitcher: React.FC = () => {
   });
 
   return (
-    <Box position="absolute" top={60} right={20} zIndex={1000}>
+    <Box position="absolute" top={60} right={20} zIndex={10000}>
       {/* Trigger Button */}
       <Pressable onPress={togglePanel} style={{ padding: 8 }}>
         <Box
@@ -87,6 +89,7 @@ export const ThemeSwitcher: React.FC = () => {
           shadowOpacity={0.15}
           shadowRadius={8}
           elevation={8}
+          zIndex={10000}
         >
           <VStack space="$sm">
             <Text fontSize="$sm" fontWeight="$medium" textAlign="center" color="$textLight600">
@@ -96,9 +99,13 @@ export const ThemeSwitcher: React.FC = () => {
             <HStack space="$sm" justifyContent="center">
               <Pressable
                 onPress={() => {
-                  // Switch to light theme
-                  const { setColorScheme } = require('@/hooks/use-color-scheme');
-                  setColorScheme('light');
+                  // Switch to light theme using the theme context
+                  try {
+                    setTheme('light');
+                    console.log('🔍 ThemeSwitcher: Switched to light theme');
+                  } catch (error) {
+                    console.error('🔍 ThemeSwitcher: Failed to set light theme:', error);
+                  }
                   togglePanel();
                 }}
                 style={{ flex: 1, alignItems: 'center', padding: 8 }}
@@ -122,9 +129,13 @@ export const ThemeSwitcher: React.FC = () => {
 
               <Pressable
                 onPress={() => {
-                  // Switch to dark theme
-                  const { setColorScheme } = require('@/hooks/use-color-scheme');
-                  setColorScheme('dark');
+                  // Switch to dark theme using the theme context
+                  try {
+                    setTheme('dark');
+                    console.log('🔍 ThemeSwitcher: Switched to dark theme');
+                  } catch (error) {
+                    console.error('🔍 ThemeSwitcher: Failed to set dark theme:', error);
+                  }
                   togglePanel();
                 }}
                 style={{ flex: 1, alignItems: 'center', padding: 8 }}
@@ -176,6 +187,7 @@ export const LoginWall: React.FC = () => {
   const [pendingPhone, setPendingPhone] = React.useState<string | undefined>(undefined);
   const fade = React.useRef(new Animated.Value(1)).current;
   const [loadingTimeoutExceeded, setLoadingTimeoutExceeded] = React.useState(false);
+  const loginScreenRef = React.useRef<any>(null);
 
   // Debug logging
   if (__DEV__) console.log('LoginWall - Auth State:', { approved, isLoading });
@@ -204,50 +216,168 @@ export const LoginWall: React.FC = () => {
     setVisible(shouldBeVisible);
   }, [approved, isAuthenticated, setVisible]);
 
-  // Focus trap for keyboard navigation
+  // Auto-focus phone input when login wall becomes visible
+  React.useEffect(() => {
+    console.log('🔍 LoginWall: Visibility changed to:', isVisible);
+
+    if (isVisible) {
+      console.log('🔍 LoginWall: Login wall visible, attempting auto-focus');
+
+      // Try multiple methods to focus the input
+      setTimeout(() => {
+        // Method 1: Try through ref
+        if (loginScreenRef.current) {
+          loginScreenRef.current?.focusPhoneInput?.();
+        }
+
+        // Method 2: Try to find and focus input directly
+        const inputs = document.querySelectorAll('input[type="text"], input[type="tel"], input[autofocus]');
+        console.log('🔍 LoginWall: Found potential inputs:', inputs.length);
+
+        if (inputs.length > 0) {
+          for (let i = 0; i < inputs.length; i++) {
+            const input = inputs[i] as HTMLInputElement;
+            if (input && input.offsetParent !== null) { // Check if visible
+              input.focus();
+              console.log('🔍 LoginWall: Focused input directly:', i);
+              break;
+            }
+          }
+        }
+      }, 150);
+    }
+  }, [isVisible]);
+
+  // Enhanced focus trap for keyboard navigation
   React.useEffect(() => {
     if (!isVisible) return;
 
+    console.log('🔍 LoginWall: Setting up enhanced focus trap');
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Prevent tab navigation from escaping the login wall
+      // Handle Tab navigation - contain focus within modal
       if (e.key === 'Tab') {
         e.preventDefault();
         e.stopPropagation();
 
-        // Keep focus within the login wall
-        const focusableElements = document.querySelectorAll(
-          'input, button, textarea, select, [tabindex]:not([tabindex="-1"])'
+        // Get all focusable elements within the modal only
+        const modalContainer = document.querySelector('[data-login-wall-modal]');
+        if (!modalContainer) {
+          console.log('🔍 LoginWall: Modal container not found');
+          return;
+        }
+
+        const focusableElements = modalContainer.querySelectorAll(
+          'input, button, textarea, select, [tabindex]:not([tabindex="-1"]), [contenteditable="true"]'
         );
 
-        const loginWallFocusable = Array.from(focusableElements).filter(el => {
-          const rect = el.getBoundingClientRect();
-          return rect.width > 0 && rect.height > 0; // Only visible elements
+        const focusableArray = Array.from(focusableElements).filter(el => {
+          const element = el as HTMLElement;
+          return element.offsetParent !== null && // Must be visible
+                 element.getAttribute('aria-hidden') !== 'true'; // Must not be aria-hidden
         });
 
-        if (loginWallFocusable.length === 0) return;
+        console.log('🔍 LoginWall: Found focusable elements:', focusableArray.length);
 
-        const currentIndex = Array.from(loginWallFocusable).indexOf(document.activeElement as Element);
-        const nextIndex = e.shiftKey
-          ? (currentIndex - 1 + loginWallFocusable.length) % loginWallFocusable.length
-          : (currentIndex + 1) % loginWallFocusable.length;
+        if (focusableArray.length === 0) {
+          console.log('🔍 LoginWall: No focusable elements found');
+          return;
+        }
 
-        (loginWallFocusable[nextIndex] as HTMLElement)?.focus();
-        return false;
+        const currentIndex = focusableArray.indexOf(document.activeElement as Element);
+        let nextIndex;
+
+        if (e.shiftKey) {
+          // Shift+Tab - go to previous element
+          nextIndex = currentIndex <= 0 ? focusableArray.length - 1 : currentIndex - 1;
+        } else {
+          // Tab - go to next element
+          nextIndex = currentIndex >= focusableArray.length - 1 ? 0 : currentIndex + 1;
+        }
+
+        console.log('🔍 LoginWall: Focusing element at index:', nextIndex);
+        (focusableArray[nextIndex] as HTMLElement)?.focus();
+        return;
       }
 
-      // Prevent escape key from closing (let the modal handle it)
+      // Handle Enter key - submit form or trigger focused button
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const activeElement = document.activeElement as HTMLElement;
+
+        // If focused on input field, submit the login form (WEB ONLY)
+        if (activeElement && activeElement.tagName === 'INPUT' && typeof window !== 'undefined') {
+          console.log('🔍 LoginWall: Enter pressed on input field - submitting form (WEB)');
+
+          // Web-specific approach: use a more reliable method to find and trigger login
+          try {
+            // Method 1: Find button by text content (most reliable for web)
+            const allButtons = Array.from(document.querySelectorAll('button'));
+            console.log('🔍 LoginWall: Total buttons found:', allButtons.length);
+
+            // Look for login/submit button by content
+            const loginButton = allButtons.find(btn => {
+              const text = btn.textContent?.toLowerCase() || '';
+              return text.includes('login') || text.includes('send') || text.includes('verify');
+            });
+
+            if (loginButton) {
+              console.log('🔍 LoginWall: Found login button by text:', loginButton.textContent);
+              loginButton.click();
+              return;
+            }
+
+            // Method 2: Find by class name or data attributes
+            const buttonByClass = document.querySelector('.login-button, [data-testid="login"], [data-cy="login"]') as HTMLElement;
+            if (buttonByClass) {
+              console.log('🔍 LoginWall: Found login button by class/attribute');
+              buttonByClass.click();
+              return;
+            }
+
+            // Method 3: Find the last button in the modal (likely to be the submit button)
+            const modalButtons = document.querySelectorAll('[data-login-wall-modal] button');
+            if (modalButtons.length > 0) {
+              const lastButton = modalButtons[modalButtons.length - 1] as HTMLElement;
+              console.log('🔍 LoginWall: Using last button in modal');
+              lastButton.click();
+              return;
+            }
+
+            console.log('🔍 LoginWall: No login button found with any method');
+          } catch (error) {
+            console.error('🔍 LoginWall: Error triggering login button:', error);
+          }
+        }
+
+        // If focused on button, trigger it
+        if (activeElement && (activeElement.tagName === 'BUTTON' || activeElement.onclick)) {
+          console.log('🔍 LoginWall: Enter pressed on focused button');
+          activeElement.click();
+          return;
+        }
+      }
+
+      // Handle Escape key - close modal
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
-        return false;
+        console.log('🔍 LoginWall: Escape pressed - modal should close');
+        // The modal will handle closing through its own logic
+        return;
       }
     };
 
-    // Add event listener with capture to prevent propagation
+    // Use capture phase and prevent background elements from receiving events
     document.addEventListener('keydown', handleKeyDown, true);
+    document.addEventListener('keyup', (e) => e.stopPropagation(), true);
 
     return () => {
+      console.log('🔍 LoginWall: Cleaning up focus trap');
       document.removeEventListener('keydown', handleKeyDown, true);
+      document.removeEventListener('keyup', (e) => e.stopPropagation(), true);
     };
   }, [isVisible]);
 
@@ -341,6 +471,7 @@ export const LoginWall: React.FC = () => {
           overflow="hidden"
           maxHeight="90%"
           pointerEvents="auto"
+          data-login-wall-modal // 🆕 Identifier for focus trap
           // Dynamic width based on content with 10% padding and smooth animation
           style={{
             backgroundColor: isDark ? 'rgba(11,11,11,0.98)' : 'rgba(255,255,255,0.98)',
@@ -366,6 +497,7 @@ export const LoginWall: React.FC = () => {
             <Animated.View style={{ opacity: fade }}>
               {mode === 'login' && (
                 <LoginScreen
+                  ref={loginScreenRef}
                   initialPhone={pendingPhone}
                   onNavigateToSignup={(phone) => {
                     if (phone) setPendingPhone(phone);
@@ -448,7 +580,22 @@ export const BackgroundLock: React.FC = () => {
       style={{
         backgroundColor: 'transparent',
       }}
-    />
+    >
+      {/* Exclude theme switcher area from background lock */}
+      <Box
+        position="absolute"
+        top={50}
+        right={10}
+        width={60}
+        height={60}
+        pointerEvents="none"
+        zIndex={10001}
+        // Creates a hole in the background lock for theme switcher access
+        style={{
+          backgroundColor: 'transparent',
+        }}
+      />
+    </Box>
   );
 };
 

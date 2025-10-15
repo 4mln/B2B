@@ -1,7 +1,7 @@
 import { useMessageBoxStore } from '@/context/messageBoxStore';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, Button, Text, XStack, YStack } from 'tamagui';
 
@@ -10,6 +10,115 @@ export const MessageBox: React.FC = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { t } = useTranslation();
+  const singleButtonRef = useRef<any>(null);
+
+  // Auto-focus single button when message box opens
+  useEffect(() => {
+    if (isVisible && actions.length === 1 && singleButtonRef.current) {
+      // Small delay to ensure the button is rendered
+      setTimeout(() => {
+        singleButtonRef.current?.focus?.();
+      }, 100);
+    }
+  }, [isVisible, actions.length]);
+
+  // Enhanced focus trap for MessageBox
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    console.log('🔍 MessageBox: Key pressed:', e.key, 'Visible:', isVisible);
+
+    // Handle Tab navigation - contain focus within MessageBox
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Get all focusable elements within the MessageBox only
+      const messageBoxContainer = document.querySelector('[data-message-box-modal]');
+      if (!messageBoxContainer) {
+        console.log('🔍 MessageBox: Container not found');
+        return;
+      }
+
+      const focusableElements = messageBoxContainer.querySelectorAll(
+        'button, [tabindex]:not([tabindex="-1"])'
+      );
+
+      const focusableArray = Array.from(focusableElements).filter(el => {
+        const element = el as HTMLElement;
+        return element.offsetParent !== null && // Must be visible
+               element.getAttribute('aria-hidden') !== 'true'; // Must not be aria-hidden
+      });
+
+      console.log('🔍 MessageBox: Found focusable buttons:', focusableArray.length);
+
+      if (focusableArray.length === 0) {
+        console.log('🔍 MessageBox: No focusable buttons found');
+        return;
+      }
+
+      const currentIndex = focusableArray.indexOf(document.activeElement as Element);
+      let nextIndex;
+
+      if (e.shiftKey) {
+        // Shift+Tab - go to previous button
+        nextIndex = currentIndex <= 0 ? focusableArray.length - 1 : currentIndex - 1;
+      } else {
+        // Tab - go to next button
+        nextIndex = currentIndex >= focusableArray.length - 1 ? 0 : currentIndex + 1;
+      }
+
+      console.log('🔍 MessageBox: Focusing button at index:', nextIndex);
+      (focusableArray[nextIndex] as HTMLElement)?.focus();
+      return;
+    }
+
+    // Handle Enter key - trigger focused button
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (actions.length === 1) {
+        console.log('🔍 MessageBox: Enter pressed - triggering single action');
+        actions[0].onPress?.();
+        hide();
+      } else {
+        // For multiple buttons, trigger the focused button
+        const activeElement = document.activeElement as HTMLElement;
+        if (activeElement && activeElement.onclick) {
+          activeElement.click();
+          hide();
+        }
+      }
+      return;
+    }
+
+    // Handle Escape key - close MessageBox
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('🔍 MessageBox: Escape pressed - hiding');
+      hide();
+      return;
+    }
+  }, [actions, hide, isVisible]);
+
+  useEffect(() => {
+    console.log('🔍 MessageBox: Setting up enhanced focus trap, visible:', isVisible);
+
+    if (!isVisible) {
+      console.log('🔍 MessageBox: Not visible, skipping setup');
+      return;
+    }
+
+    // Use capture phase to intercept events before background elements
+    document.addEventListener('keydown', handleKeyDown, true);
+    document.addEventListener('keyup', (e) => e.stopPropagation(), true);
+
+    return () => {
+      console.log('🔍 MessageBox: Cleaning up focus trap');
+      document.removeEventListener('keydown', handleKeyDown, true);
+      document.removeEventListener('keyup', (e) => e.stopPropagation(), true);
+    };
+  }, [isVisible, handleKeyDown]);
 
   // Get translated title based on type - memoized to prevent infinite loops
   const translatedTitle = useMemo(() => {
@@ -99,6 +208,7 @@ export const MessageBox: React.FC = () => {
             animation="bouncy"
             enterStyle={{ opacity: 0, scale: 0.8, y: 20 }}
             exitStyle={{ opacity: 0, scale: 0.8, y: 20 }}
+            data-message-box-modal // 🆕 Identifier for focus trap
           >
           <YStack space="$3" alignItems="center">
             <YStack
@@ -126,9 +236,11 @@ export const MessageBox: React.FC = () => {
           <XStack space="$3" justifyContent="center" flexWrap="wrap" marginTop="$4">
             {(actions && actions.length > 0 ? actions : [{ label: t('common.back'), onPress: hide }]).map((action, idx) => {
               const variant = action.variant || 'primary';
+              const isSingleButton = actions.length === 1;
               return (
                 <Button
                   key={`${action.label}-${idx}`}
+                  ref={isSingleButton ? singleButtonRef : undefined}
                   size="$6"
                   backgroundColor={
                     variant === 'danger'
@@ -138,7 +250,7 @@ export const MessageBox: React.FC = () => {
                       : '#3b82f6'
                   }
                   color={
-                    variant === 'secondary' 
+                    variant === 'secondary'
                       ? (isDark ? '#ffffff' : '#000000')
                       : '#ffffff'
                   }
