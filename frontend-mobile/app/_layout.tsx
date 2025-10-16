@@ -67,12 +67,13 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <TamaguiProvider>
-              <PortalProvider>
-                <WindowManagerProvider>
-                  <ConnectionBanner />
-                  <LoginWall />
-                  <BackgroundLock />
-                  <ThemeSwitcher />
+              <ThemeProvider>
+                <PortalProvider>
+                  <WindowManagerProvider>
+                    <ConnectionBanner />
+                    <LoginWall />
+                    <BackgroundLock />
+                    <ThemeSwitcher />
                   <Stack>
                   <Stack.Screen name="index" options={{ headerShown: false }} />
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -88,8 +89,9 @@ export default function RootLayout() {
                   <AppWindows />
                 </WindowManagerProvider>
               </PortalProvider>
-            </TamaguiProvider>
-          </ThemeProvider>
+              </ThemeProvider>
+          </TamaguiProvider>
+        </ThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </ErrorBoundary>

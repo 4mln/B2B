@@ -1,19 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
-import { 
-  getCurrentTheme, 
-  getTheme, 
-  setTheme, 
-  toggleDarkMode, 
-  setAutoDarkMode,
+import {
   createCustomTheme,
   deleteCustomTheme,
-  subscribeToTheme,
   getAvailableThemes,
+  getCurrentTheme,
   getThemeConfig,
   resetTheme,
+  setAutoDarkMode,
+  setTheme,
+  subscribeToTheme,
   Theme,
-  ThemeConfig
+  ThemeConfig,
+  toggleDarkMode
 } from '@/services/themeService';
+import { useCallback, useEffect, useState } from 'react';
+import { trackFeatureUsage } from '../services/analytics';
 
 /**
  * Hook for using themes in React components
@@ -59,7 +59,6 @@ export const useTheme = (options: UseThemeOptions = {}): UseThemeReturn => {
       
       if (trackUsage) {
         // Track theme change
-        const { trackFeatureUsage } = await import('../services/analytics');
         trackFeatureUsage('theme', 'change', {
           themeName: name,
           isDark: theme?.isDark || false,
@@ -82,7 +81,6 @@ export const useTheme = (options: UseThemeOptions = {}): UseThemeReturn => {
       
       if (trackUsage) {
         // Track dark mode toggle
-        const { trackFeatureUsage } = await import('../services/analytics');
         trackFeatureUsage('theme', 'toggle_dark_mode', {
           wasDark: theme?.isDark || false,
         });
@@ -104,7 +102,6 @@ export const useTheme = (options: UseThemeOptions = {}): UseThemeReturn => {
       
       if (trackUsage) {
         // Track auto dark mode setting
-        const { trackFeatureUsage } = await import('../services/analytics');
         trackFeatureUsage('theme', 'auto_dark_mode', {
           enabled,
         });
@@ -126,7 +123,6 @@ export const useTheme = (options: UseThemeOptions = {}): UseThemeReturn => {
       
       if (trackUsage) {
         // Track custom theme creation
-        const { trackFeatureUsage } = await import('../services/analytics');
         trackFeatureUsage('theme', 'create_custom', {
           themeName: name,
           isDark: customTheme.isDark,
@@ -149,7 +145,6 @@ export const useTheme = (options: UseThemeOptions = {}): UseThemeReturn => {
       
       if (trackUsage) {
         // Track custom theme deletion
-        const { trackFeatureUsage } = await import('../services/analytics');
         trackFeatureUsage('theme', 'delete_custom', {
           themeName: name,
         });
@@ -171,7 +166,6 @@ export const useTheme = (options: UseThemeOptions = {}): UseThemeReturn => {
       
       if (trackUsage) {
         // Track theme reset
-        const { trackFeatureUsage } = await import('../services/analytics');
         trackFeatureUsage('theme', 'reset', {});
       }
     } catch (err) {

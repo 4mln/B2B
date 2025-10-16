@@ -51,7 +51,7 @@ config.resolver.alias = {
 };
 
 // Ensure proper module resolution for dynamic imports
-config.resolver.unstable_enablePackageExports = true;
+// config.resolver.unstable_enablePackageExports = true;
 
 // Tamagui specific config for web + native
 config.resolver.sourceExts = config.resolver.sourceExts || [];

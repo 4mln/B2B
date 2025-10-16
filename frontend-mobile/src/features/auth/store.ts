@@ -163,8 +163,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (token && approved === 'true' && !requireOtpOnStart) {
         console.log('🔧 initializeAuth: Session appears valid, fetching profile...');
         try {
-          console.log('🔧 initializeAuth: Importing authService and fetching profile (with timeout)...');
-          const { authService } = await import('../../services/auth');
+          console.log('🔧 initializeAuth: Fetching profile (with timeout)...');
           const profileResp = await withTimeout(
             authService.getProfile(),
             5000,

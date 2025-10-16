@@ -1,6 +1,6 @@
-import { Platform } from 'react-native';
-import * as Analytics from 'expo-analytics';
+import analytics from '@react-native-firebase/analytics';
 import * as Sentry from '@sentry/react-native';
+import { Platform } from 'react-native';
 
 /**
  * Analytics Service
@@ -9,12 +9,12 @@ import * as Sentry from '@sentry/react-native';
  */
 
 // Initialize analytics
-let analytics: Analytics.Analytics | null = null;
+let firebaseAnalytics: any = null;
 
-export const initializeAnalytics = () => {
+export const initializeAnalytics = async () => {
   try {
     // Initialize Firebase Analytics
-    analytics = new Analytics.Analytics('YOUR_FIREBASE_ANALYTICS_ID');
+    await analytics().setAnalyticsCollectionEnabled(true);
     
     // Initialize Sentry for error monitoring
     Sentry.init({
@@ -42,9 +42,7 @@ export const initializeAnalytics = () => {
  */
 export const trackEvent = (eventName: string, parameters?: Record<string, any>) => {
   try {
-    if (analytics) {
-      analytics.event(eventName, parameters);
-    }
+    analytics().logEvent(eventName, parameters);
     
     // Also send to Sentry for debugging
     Sentry.addBreadcrumb({
@@ -63,9 +61,11 @@ export const trackEvent = (eventName: string, parameters?: Record<string, any>) 
  */
 export const trackScreenView = (screenName: string, parameters?: Record<string, any>) => {
   try {
-    if (analytics) {
-      analytics.screen(screenName, parameters);
-    }
+    analytics().logScreenView({
+      screen_name: screenName,
+      screen_class: screenName,
+      ...parameters,
+    });
     
     Sentry.addBreadcrumb({
       message: `Screen: ${screenName}`,
@@ -83,9 +83,7 @@ export const trackScreenView = (screenName: string, parameters?: Record<string, 
  */
 export const setUserProperties = (properties: Record<string, any>) => {
   try {
-    if (analytics) {
-      analytics.setUserProperties(properties);
-    }
+    analytics().setUserProperties(properties);
     
     Sentry.setUser(properties);
   } catch (error) {
@@ -286,16 +284,14 @@ export const trackNotificationEvent = (eventType: string, notificationType: stri
 /**
  * Get analytics instance
  */
-export const getAnalytics = () => analytics;
+export const getAnalytics = () => analytics();
 
 /**
  * Set user ID for tracking
  */
 export const setUserId = (userId: string) => {
   try {
-    if (analytics) {
-      analytics.setUserId(userId);
-    }
+    analytics().setUserId(userId);
     
     Sentry.setUser({ id: userId });
   } catch (error) {
@@ -308,9 +304,7 @@ export const setUserId = (userId: string) => {
  */
 export const clearUserData = () => {
   try {
-    if (analytics) {
-      analytics.reset();
-    }
+    analytics().resetAnalyticsData();
     
     Sentry.setUser(null);
   } catch (error) {
