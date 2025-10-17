@@ -3,6 +3,7 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { useFonts } from 'expo-font';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { TamaguiProvider } from 'tamagui';
 import { initializePlugins } from '@/plugins';
 import { PluginNavigation } from '@/navigation/PluginNavigation';
 import { useAuthStore } from '@/features/auth/store';
@@ -11,6 +12,7 @@ import { initializeFeatureFlags } from '@/services/featureFlags';
 import { initializeOfflineService } from '@/services/offlineService';
 import { initializeThemeService } from '@/services/themeService';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import config from './tamagui.config';
 
 /**
  * Main App Component
@@ -95,13 +97,15 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <PluginNavigation 
-            userPermissions={user?.permissions || []}
-          />
-        </ThemeProvider>
-      </QueryClientProvider>
+      <TamaguiProvider config={config} defaultTheme="light">
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <PluginNavigation
+              userPermissions={user?.capabilities || []}
+            />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </TamaguiProvider>
     </SafeAreaProvider>
   );
 }

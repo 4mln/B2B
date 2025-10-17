@@ -28585,6 +28585,48 @@
           "val": 64,
           "variable": ""
         },
+        "xs": {
+          "isVar": true,
+          "key": "$xs",
+          "name": "t-size-xs",
+          "val": 4,
+          "variable": ""
+        },
+        "sm": {
+          "isVar": true,
+          "key": "$sm",
+          "name": "t-size-sm",
+          "val": 8,
+          "variable": ""
+        },
+        "md": {
+          "isVar": true,
+          "key": "$md",
+          "name": "t-size-md",
+          "val": 16,
+          "variable": ""
+        },
+        "lg": {
+          "isVar": true,
+          "key": "$lg",
+          "name": "t-size-lg",
+          "val": 24,
+          "variable": ""
+        },
+        "xl": {
+          "isVar": true,
+          "key": "$xl",
+          "name": "t-size-xl",
+          "val": 32,
+          "variable": ""
+        },
+        "xxl": {
+          "isVar": true,
+          "key": "$xxl",
+          "name": "t-size-xxl",
+          "val": 48,
+          "variable": ""
+        },
         "true": {
           "isVar": true,
           "key": "$true",
@@ -28683,6 +28725,48 @@
           "key": "$12",
           "name": "t-space-12",
           "val": 64,
+          "variable": ""
+        },
+        "xs": {
+          "isVar": true,
+          "key": "$xs",
+          "name": "t-space-xs",
+          "val": 4,
+          "variable": ""
+        },
+        "sm": {
+          "isVar": true,
+          "key": "$sm",
+          "name": "t-space-sm",
+          "val": 8,
+          "variable": ""
+        },
+        "md": {
+          "isVar": true,
+          "key": "$md",
+          "name": "t-space-md",
+          "val": 16,
+          "variable": ""
+        },
+        "lg": {
+          "isVar": true,
+          "key": "$lg",
+          "name": "t-space-lg",
+          "val": 24,
+          "variable": ""
+        },
+        "xl": {
+          "isVar": true,
+          "key": "$xl",
+          "name": "t-space-xl",
+          "val": 32,
+          "variable": ""
+        },
+        "xxl": {
+          "isVar": true,
+          "key": "$xxl",
+          "name": "t-space-xxl",
+          "val": 48,
           "variable": ""
         },
         "true": {
@@ -28802,6 +28886,13 @@
           "name": "c-black",
           "val": "#000000",
           "variable": ""
+        },
+        "textLight400": {
+          "isVar": true,
+          "key": "$textLight400",
+          "name": "c-textLight400",
+          "val": "#9ca3af",
+          "variable": ""
         }
       }
     },
@@ -28831,6 +28922,7 @@
         "color": "#111827",
         "white": "#ffffff",
         "black": "#000000",
+        "textLight400": "#9ca3af",
         "id": "light"
       },
       "dark": {
@@ -28858,6 +28950,7 @@
         "color": "#f9fafb",
         "white": "#ffffff",
         "black": "#000000",
+        "textLight400": "#9ca3af",
         "id": "dark"
       }
     },
@@ -28988,6 +29081,48 @@
         "val": 64,
         "variable": ""
       },
+      "$size.xs": {
+        "isVar": true,
+        "key": "$xs",
+        "name": "t-size-xs",
+        "val": 4,
+        "variable": ""
+      },
+      "$size.sm": {
+        "isVar": true,
+        "key": "$sm",
+        "name": "t-size-sm",
+        "val": 8,
+        "variable": ""
+      },
+      "$size.md": {
+        "isVar": true,
+        "key": "$md",
+        "name": "t-size-md",
+        "val": 16,
+        "variable": ""
+      },
+      "$size.lg": {
+        "isVar": true,
+        "key": "$lg",
+        "name": "t-size-lg",
+        "val": 24,
+        "variable": ""
+      },
+      "$size.xl": {
+        "isVar": true,
+        "key": "$xl",
+        "name": "t-size-xl",
+        "val": 32,
+        "variable": ""
+      },
+      "$size.xxl": {
+        "isVar": true,
+        "key": "$xxl",
+        "name": "t-size-xxl",
+        "val": 48,
+        "variable": ""
+      },
       "$size.true": {
         "isVar": true,
         "key": "$true",
@@ -29084,6 +29219,48 @@
         "key": "$12",
         "name": "t-space-12",
         "val": 64,
+        "variable": ""
+      },
+      "$space.xs": {
+        "isVar": true,
+        "key": "$xs",
+        "name": "t-space-xs",
+        "val": 4,
+        "variable": ""
+      },
+      "$space.sm": {
+        "isVar": true,
+        "key": "$sm",
+        "name": "t-space-sm",
+        "val": 8,
+        "variable": ""
+      },
+      "$space.md": {
+        "isVar": true,
+        "key": "$md",
+        "name": "t-space-md",
+        "val": 16,
+        "variable": ""
+      },
+      "$space.lg": {
+        "isVar": true,
+        "key": "$lg",
+        "name": "t-space-lg",
+        "val": 24,
+        "variable": ""
+      },
+      "$space.xl": {
+        "isVar": true,
+        "key": "$xl",
+        "name": "t-space-xl",
+        "val": 32,
+        "variable": ""
+      },
+      "$space.xxl": {
+        "isVar": true,
+        "key": "$xxl",
+        "name": "t-space-xxl",
+        "val": 48,
         "variable": ""
       },
       "$space.true": {
@@ -29196,6 +29373,13 @@
         "key": "$black",
         "name": "c-black",
         "val": "#000000",
+        "variable": ""
+      },
+      "$color.textLight400": {
+        "isVar": true,
+        "key": "$textLight400",
+        "name": "c-textLight400",
+        "val": "#9ca3af",
         "variable": ""
       }
     },

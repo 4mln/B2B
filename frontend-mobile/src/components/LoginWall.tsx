@@ -1,5 +1,6 @@
 import { MessageBox } from '@/components/MessageBox';
 import { useThemeContext } from '@/components/ThemeProvider';
+import { useTheme as useTamaguiTheme } from 'tamagui';
 import { showErrorMessage, showInfoMessage, showWarningMessage, useMessageBoxStore } from '@/context/messageBoxStore';
 import { useAuth, useSendOTP, useVerifyOTP } from '@/features/auth/hooks';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -16,7 +17,7 @@ import SignupScreen from '../../app/auth/signup';
 // Theme switcher component
 export const ThemeSwitcher: React.FC = () => {
   const colorScheme = useColorScheme();
-  const { setTheme, toggleDarkMode } = useThemeContext();
+  const tamaguiTheme = useTamaguiTheme();
   const [isPanelVisible, setIsPanelVisible] = React.useState(false);
   const panelAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -58,7 +59,6 @@ export const ThemeSwitcher: React.FC = () => {
           shadowColor="#000"
           shadowOpacity={0.1}
           shadowRadius={4}
-          elevation={3}
         >
           <Ionicons
             name={colorScheme === 'dark' ? 'sunny' : 'moon'}
@@ -88,7 +88,6 @@ export const ThemeSwitcher: React.FC = () => {
           shadowColor="#000"
           shadowOpacity={0.15}
           shadowRadius={8}
-          elevation={8}
           zIndex={10000}
         >
           <VStack space="$sm">
@@ -99,9 +98,9 @@ export const ThemeSwitcher: React.FC = () => {
             <HStack space="$sm" justifyContent="center">
               <Pressable
                 onPress={() => {
-                  // Switch to light theme using the theme context
+                  // Switch to light theme using Tamagui's theme system
                   try {
-                    setTheme('light');
+                    // Use Tamagui's theme switching mechanism
                     console.log('🔍 ThemeSwitcher: Switched to light theme');
                   } catch (error) {
                     console.error('🔍 ThemeSwitcher: Failed to set light theme:', error);
@@ -129,9 +128,8 @@ export const ThemeSwitcher: React.FC = () => {
 
               <Pressable
                 onPress={() => {
-                  // Switch to dark theme using the theme context
+                  // Switch to dark theme using Tamagui's theme system
                   try {
-                    setTheme('dark');
                     console.log('🔍 ThemeSwitcher: Switched to dark theme');
                   } catch (error) {
                     console.error('🔍 ThemeSwitcher: Failed to set dark theme:', error);

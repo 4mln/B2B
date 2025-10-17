@@ -1,11 +1,12 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { PortalProvider } from '@tamagui/portal';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { TamaguiProvider } from '../src/components/TamaguiProvider';
+import { TamaguiProvider } from 'tamagui';
+import { ThemeProvider, useThemeContext } from '../src/components/ThemeProvider';
 import { AppWindows, WindowManagerProvider } from '../src/components/window-system';
 import '../src/i18n';
 import '../src/polyfills/web';
@@ -65,8 +66,8 @@ export default function RootLayout() {
     <ErrorBoundary>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <TamaguiProvider>
+          <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <TamaguiProvider config={require('../tamagui.config').default} defaultTheme="light">
               <ThemeProvider>
                 <PortalProvider>
                   <WindowManagerProvider>
@@ -74,24 +75,24 @@ export default function RootLayout() {
                     <LoginWall />
                     <BackgroundLock />
                     <ThemeSwitcher />
-                  <Stack>
-                  <Stack.Screen name="index" options={{ headerShown: false }} />
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen name="profile/sessions" options={{ headerShown: false }} />
-                  <Stack.Screen name="product/[id]" options={{ headerShown: false, presentation: 'modal' }} />
-                  <Stack.Screen name="product/create" options={{ headerShown: false, presentation: 'modal' }} />
-                  <Stack.Screen name="chat/[id]" options={{ headerShown: false, presentation: 'modal' }} />
-                  <Stack.Screen name="rfq/create" options={{ headerShown: false, presentation: 'modal' }} />
-                  <Stack.Screen name="stores" options={{ headerShown: false }} />
-                  <Stack.Screen name="window-test" options={{ headerShown: false }} />
-                  <Stack.Screen name="modal" options={{ presentation: 'modal', title: undefined }} />
-                  </Stack>
-                  <AppWindows />
-                </WindowManagerProvider>
-              </PortalProvider>
+                    <Stack>
+                      <Stack.Screen name="index" options={{ headerShown: false }} />
+                      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                      <Stack.Screen name="profile/sessions" options={{ headerShown: false }} />
+                      <Stack.Screen name="product/[id]" options={{ headerShown: false, presentation: 'modal' }} />
+                      <Stack.Screen name="product/create" options={{ headerShown: false, presentation: 'modal' }} />
+                      <Stack.Screen name="chat/[id]" options={{ headerShown: false, presentation: 'modal' }} />
+                      <Stack.Screen name="rfq/create" options={{ headerShown: false, presentation: 'modal' }} />
+                      <Stack.Screen name="stores" options={{ headerShown: false }} />
+                      <Stack.Screen name="window-test" options={{ headerShown: false }} />
+                      <Stack.Screen name="modal" options={{ presentation: 'modal', title: undefined }} />
+                    </Stack>
+                    <AppWindows />
+                  </WindowManagerProvider>
+                </PortalProvider>
               </ThemeProvider>
-          </TamaguiProvider>
-        </ThemeProvider>
+            </TamaguiProvider>
+          </NavigationThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </ErrorBoundary>

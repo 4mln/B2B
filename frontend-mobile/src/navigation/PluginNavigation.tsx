@@ -4,7 +4,7 @@ import { PluginLoader } from '@/plugins/loader';
 import { PluginMetadata } from '@/plugins/types';
 import { initializeConfig, setUserContext } from '@/services/configService';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
@@ -115,8 +115,22 @@ export const PluginNavigation: React.FC<PluginNavigationProps> = ({
     );
   }
 
+  // Create navigation theme based on current theme
+  const navigationTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      primary: '#007AFF',
+      background: '#FFFFFF',
+      card: '#FFFFFF',
+      text: '#000000',
+      border: '#E1E5E9',
+      notification: '#FF3B30',
+    },
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,

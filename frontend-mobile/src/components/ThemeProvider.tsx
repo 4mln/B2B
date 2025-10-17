@@ -1,10 +1,11 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import { useTheme as useTamaguiTheme } from 'tamagui';
 import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/services/themeService';
 
 /**
  * Theme Context
- * Provides theme data to all child components
+ * Provides unified theme data that bridges Tamagui and custom theme systems
  */
 
 export interface ThemeContextValue {
@@ -21,30 +22,47 @@ export interface ThemeContextValue {
   getAvailableThemes: () => string[];
   getThemeConfig: () => any;
   resetTheme: () => Promise<void>;
+  // Tamagui theme integration
+  tamaguiTheme?: any;
+  themeName?: string;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 /**
  * Theme Provider Component
- * Wraps the app to provide theme context
+ * Provides unified theme context that works with Tamagui
  */
 export interface ThemeProviderProps {
   children: ReactNode;
+  defaultTheme?: string;
 }
 
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const themeData = useTheme();
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({
+  children,
+  defaultTheme = 'light'
+}) => {
+  const customThemeData = useTheme();
+  const tamaguiTheme = useTamaguiTheme();
+
+  // Bridge between custom theme and Tamagui theme
+  const unifiedThemeData = useMemo<ThemeContextValue>(() => ({
+    ...customThemeData,
+    // Add Tamagui theme integration
+    tamaguiTheme: tamaguiTheme || {},
+    themeName: defaultTheme,
+  }), [customThemeData, tamaguiTheme, defaultTheme]);
 
   return (
-    <ThemeContext.Provider value={themeData}>
+    <ThemeContext.Provider value={unifiedThemeData}>
       {children}
     </ThemeContext.Provider>
   );
 };
 
 /**
- * Hook to use theme context
+ * Hook to use unified theme context
+ * Provides both custom theme data and Tamagui theme integration
  */
 export const useThemeContext = (): ThemeContextValue => {
   const context = useContext(ThemeContext);

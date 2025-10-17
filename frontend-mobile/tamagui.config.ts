@@ -113,6 +113,12 @@ const size = {
   10: 48,
   11: 56,
   12: 64,
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
   true: 16, // default
 }
 
@@ -124,6 +130,7 @@ export const tokens = createTokens({
   color: {
     white: '#ffffff',
     black: '#000000',
+    textLight400: '#9ca3af',
   },
 })
 
