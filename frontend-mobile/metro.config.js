@@ -1,7 +1,8 @@
 const { getDefaultConfig } = require('expo/metro-config');
+const { withTamagui } = require('@tamagui/metro-plugin');
 
 /** @type {import('expo/metro-config').MetroConfig} */
-const config = getDefaultConfig(__dirname);
+let config = getDefaultConfig(__dirname);
 
 // Add support for additional file extensions
 config.resolver.assetExts.push(
@@ -58,5 +59,11 @@ config.resolver.sourceExts = config.resolver.sourceExts || [];
 if (!config.resolver.sourceExts.includes('mjs')) {
   config.resolver.sourceExts.push('mjs');
 }
+
+// Apply Tamagui metro plugin
+config = withTamagui(config, {
+  config: './tamagui.config.ts',
+  components: ['tamagui'],
+});
 
 module.exports = config;

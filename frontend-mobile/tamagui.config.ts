@@ -125,7 +125,16 @@ const size = {
 export const tokens = createTokens({
   size,
   space: { ...size, true: size.true, '-1': -4, '-2': -8 },
-  radius: { 0: 0, 1: 6, 2: 10, 3: 14, 4: 18, 5: 24 },
+  radius: {
+    0: 0,
+    1: 6,
+    2: 10,
+    3: 14,
+    4: 18,
+    5: 24,
+    full: 9999,
+    md: 16
+  },
   zIndex: { 0: 0, 1: 10, 2: 100, 3: 1000, 4: 10000 },
   color: {
     white: '#ffffff',
@@ -156,6 +165,7 @@ const lightTheme = {
 
   // Borders (light)
   borderLight100: '#e5e7eb',
+  borderLight200: '#d1d5db',
   borderLight300: '#d1d5db',
 
   // Backgrounds (dark variants may be referenced explicitly)
@@ -200,6 +210,7 @@ const darkTheme = {
 
   // Borders (dark)
   borderLight100: '#374151',
+  borderLight200: '#4b5563',
   borderLight300: '#4b5563',
 
   // Feedback
@@ -217,6 +228,21 @@ const configBase = {
     persian: persianFont,
   },
   tokens,
+
+  // Enable compiler optimizations
+  enableCSSInterop: true,
+
+  // Enable animations
+  animations: {
+    enabled: true,
+    drivers: ['react-native', 'web'],
+  },
+
+  // Compiler settings for better performance
+  experimentalFlattening: true,
+  cssInterop: {
+    optimize: process.env.NODE_ENV === 'production',
+  },
 
   themes: {
     light: lightTheme,

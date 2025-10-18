@@ -4,14 +4,6 @@ module.exports = function (api) {
     presets: ['babel-preset-expo'],
     plugins: [
       [
-        'module:@tamagui/babel-plugin',
-        {
-          components: ['tamagui'],
-          config: './tamagui.config.ts',
-          disableExtraction: process.env.NODE_ENV === 'development',
-        },
-      ],
-      [
         'module-resolver',
         {
           root: ['./src'],
@@ -29,7 +21,6 @@ module.exports = function (api) {
           },
         },
       ],
-      'react-native-reanimated/plugin',
     ],
   };
 };

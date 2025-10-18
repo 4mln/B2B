@@ -8,8 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, Easing, Pressable, ScrollView, StatusBar, TextInput } from 'react-native';
-import { Stack as Box, Button, XStack as HStack, Spinner, Text, YStack as VStack } from 'tamagui';
+import { Pressable, ScrollView, StatusBar, TextInput } from 'react-native';
+import { AnimatePresence, Stack as Box, Button, XStack as HStack, Spinner, Text, YStack as VStack } from 'tamagui';
 import { create } from 'zustand';
 import LoginScreen from '../../app/auth/login';
 import SignupScreen from '../../app/auth/signup';
@@ -19,29 +19,10 @@ export const ThemeSwitcher: React.FC = () => {
   const colorScheme = useColorScheme();
   const tamaguiTheme = useTamaguiTheme();
   const [isPanelVisible, setIsPanelVisible] = React.useState(false);
-  const panelAnim = React.useRef(new Animated.Value(0)).current;
 
   const togglePanel = () => {
-    const toValue = isPanelVisible ? 0 : 1;
     setIsPanelVisible(!isPanelVisible);
-
-    Animated.timing(panelAnim, {
-      toValue,
-      duration: 250,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
   };
-
-  const panelTranslateY = panelAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-10, 0],
-  });
-
-  const panelOpacity = panelAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
 
   return (
     <Box position="absolute" top={60} right={20} zIndex={10000}>
@@ -69,95 +50,106 @@ export const ThemeSwitcher: React.FC = () => {
       </Pressable>
 
       {/* Sliding Panel */}
-      <Animated.View
-        style={{
-          position: 'absolute',
-          top: 50,
-          right: 0,
-          opacity: panelOpacity,
-          transform: [{ translateY: panelTranslateY }],
-        }}
-      >
-        <Box
-          width={180}
-          backgroundColor={colorScheme === 'dark' ? '$backgroundDark0' : '$backgroundLight0'}
-          borderRadius="$md"
-          borderWidth={1}
-          borderColor={colorScheme === 'dark' ? '$borderLight300' : '$borderLight200'}
-          padding="$md"
-          shadowColor="#000"
-          shadowOpacity={0.15}
-          shadowRadius={8}
-          zIndex={10000}
-        >
-          <VStack space="$sm">
-            <Text fontSize="$sm" fontWeight="$medium" textAlign="center" color="$textLight600">
-              Switch Theme
-            </Text>
-
-            <HStack space="$sm" justifyContent="center">
-              <Pressable
-                onPress={() => {
-                  // Switch to light theme using Tamagui's theme system
-                  try {
-                    // Use Tamagui's theme switching mechanism
-                    console.log('🔍 ThemeSwitcher: Switched to light theme');
-                  } catch (error) {
-                    console.error('🔍 ThemeSwitcher: Failed to set light theme:', error);
-                  }
-                  togglePanel();
-                }}
-                style={{ flex: 1, alignItems: 'center', padding: 8 }}
-              >
-                <Box
-                  width={36}
-                  height={36}
-                  borderRadius="$full"
-                  backgroundColor={colorScheme === 'light' ? '$primary500' : '$backgroundLight100'}
-                  borderWidth={2}
-                  borderColor={colorScheme === 'light' ? '$primary500' : '$borderLight300'}
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Ionicons name="sunny" size={18} color={colorScheme === 'light' ? 'white' : '$textLight600'} />
-                </Box>
-                <Text fontSize="$xs" marginTop="$xs" color="$textLight600">
-                  Light
+      <AnimatePresence>
+        {isPanelVisible && (
+          <Box
+            position="absolute"
+            top={50}
+            right={0}
+            zIndex={10000}
+            animation="bouncy"
+            enterStyle={{
+              opacity: 0,
+              scale: 0.8,
+              y: 50
+            }}
+            exitStyle={{
+              opacity: 0,
+              scale: 0.8,
+              y: -100
+            }}
+          >
+            <Box
+              width={180}
+              backgroundColor={colorScheme === 'dark' ? '$backgroundDark0' : '$backgroundLight0'}
+              borderRadius="$md"
+              borderWidth={1}
+              borderColor={colorScheme === 'dark' ? '$borderLight300' : '$borderLight200'}
+              padding="$md"
+              shadowColor="#000"
+              shadowOpacity={0.15}
+              shadowRadius={8}
+            >
+              <VStack space="$sm">
+                <Text fontSize="$sm" fontWeight="$medium" textAlign="center" color="$textLight600">
+                  Switch Theme
                 </Text>
-              </Pressable>
 
-              <Pressable
-                onPress={() => {
-                  // Switch to dark theme using Tamagui's theme system
-                  try {
-                    console.log('🔍 ThemeSwitcher: Switched to dark theme');
-                  } catch (error) {
-                    console.error('🔍 ThemeSwitcher: Failed to set dark theme:', error);
-                  }
-                  togglePanel();
-                }}
-                style={{ flex: 1, alignItems: 'center', padding: 8 }}
-              >
-                <Box
-                  width={36}
-                  height={36}
-                  borderRadius="$full"
-                  backgroundColor={colorScheme === 'dark' ? '$primary500' : '$backgroundLight100'}
-                  borderWidth={2}
-                  borderColor={colorScheme === 'dark' ? '$primary500' : '$borderLight300'}
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Ionicons name="moon" size={18} color={colorScheme === 'dark' ? 'white' : '$textLight600'} />
-                </Box>
-                <Text fontSize="$xs" marginTop="$xs" color="$textLight600">
-                  Dark
-                </Text>
-              </Pressable>
-            </HStack>
-          </VStack>
-        </Box>
-      </Animated.View>
+                <HStack space="$sm" justifyContent="center">
+                  <Pressable
+                    onPress={() => {
+                      // Switch to light theme using Tamagui's theme system
+                      try {
+                        // Use Tamagui's theme switching mechanism
+                        console.log('🔍 ThemeSwitcher: Switched to light theme');
+                      } catch (error) {
+                        console.error('🔍 ThemeSwitcher: Failed to set light theme:', error);
+                      }
+                      togglePanel();
+                    }}
+                    style={{ flex: 1, alignItems: 'center', padding: 8 }}
+                  >
+                    <Box
+                      width={36}
+                      height={36}
+                      borderRadius="$full"
+                      backgroundColor={colorScheme === 'light' ? '$primary500' : '$backgroundLight100'}
+                      borderWidth={2}
+                      borderColor={colorScheme === 'light' ? '$primary500' : '$borderLight300'}
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Ionicons name="sunny" size={18} color={colorScheme === 'light' ? 'white' : '$textLight600'} />
+                    </Box>
+                    <Text fontSize="$xs" marginTop="$xs" color="$textLight600">
+                      Light
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => {
+                      // Switch to dark theme using Tamagui's theme system
+                      try {
+                        console.log('🔍 ThemeSwitcher: Switched to dark theme');
+                      } catch (error) {
+                        console.error('🔍 ThemeSwitcher: Failed to set dark theme:', error);
+                      }
+                      togglePanel();
+                    }}
+                    style={{ flex: 1, alignItems: 'center', padding: 8 }}
+                  >
+                    <Box
+                      width={36}
+                      height={36}
+                      borderRadius="$full"
+                      backgroundColor={colorScheme === 'dark' ? '$primary500' : '$backgroundLight100'}
+                      borderWidth={2}
+                      borderColor={colorScheme === 'dark' ? '$primary500' : '$borderLight300'}
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Ionicons name="moon" size={18} color={colorScheme === 'dark' ? 'white' : '$textLight600'} />
+                    </Box>
+                    <Text fontSize="$xs" marginTop="$xs" color="$textLight600">
+                      Dark
+                    </Text>
+                  </Pressable>
+                </HStack>
+              </VStack>
+            </Box>
+          </Box>
+        )}
+      </AnimatePresence>
     </Box>
   );
 };
@@ -183,7 +175,6 @@ export const LoginWall: React.FC = () => {
   const [mode, setMode] = React.useState<'login' | 'signup' | 'otp'>('login');
   const [prevMode, setPrevMode] = React.useState<'login' | 'signup'>('login');
   const [pendingPhone, setPendingPhone] = React.useState<string | undefined>(undefined);
-  const fade = React.useRef(new Animated.Value(1)).current;
   const [loadingTimeoutExceeded, setLoadingTimeoutExceeded] = React.useState(false);
   const loginScreenRef = React.useRef<any>(null);
 
@@ -389,10 +380,10 @@ export const LoginWall: React.FC = () => {
         right={0}
         bottom={0}
         left={0}
-        pointerEvents="auto"
         zIndex={9999}
         // Semi-transparent backdrop that covers entire screen
         style={{
+          pointerEvents: 'auto',
           backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)',
         }}
       >
@@ -403,9 +394,9 @@ export const LoginWall: React.FC = () => {
             padding={32}
             alignItems="center"
             space={16}
-            pointerEvents="auto"
-            // Dynamic width with 10% padding and smooth animation
             style={{
+              pointerEvents: 'auto',
+              // Dynamic width with 10% padding and smooth animation
               backgroundColor: isDark ? 'rgba(11,11,11,0.98)' : 'rgba(255,255,255,0.98)',
               width: 'auto',
               maxWidth: '90%',
@@ -431,12 +422,8 @@ export const LoginWall: React.FC = () => {
   }
 
   const switchMode = (next: 'login' | 'signup' | 'otp') => {
-    // animate fade between modes
-    fade.stopAnimation();
-    Animated.timing(fade, { toValue: 0, duration: 150, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(() => {
-      setMode(next);
-      Animated.timing(fade, { toValue: 1, duration: 150, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-    });
+    // Switch mode immediately - AnimatePresence handles the animation
+    setMode(next);
   };
 
   // Only dismiss when explicitly approved after OTP and user is authenticated
@@ -455,10 +442,10 @@ export const LoginWall: React.FC = () => {
       right={0}
       bottom={0}
       left={0}
-      pointerEvents="auto"
       zIndex={9999}
       // Semi-transparent backdrop that covers entire screen
       style={{
+        pointerEvents: 'auto',
         backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)',
       }}
     >
@@ -468,10 +455,10 @@ export const LoginWall: React.FC = () => {
           borderRadius={16}
           overflow="hidden"
           maxHeight="90%"
-          pointerEvents="auto"
           data-login-wall-modal // 🆕 Identifier for focus trap
           // Dynamic width based on content with 10% padding and smooth animation
           style={{
+            pointerEvents: 'auto',
             backgroundColor: isDark ? 'rgba(11,11,11,0.98)' : 'rgba(255,255,255,0.98)',
             width: 'auto',
             maxWidth: '90%',
@@ -492,62 +479,107 @@ export const LoginWall: React.FC = () => {
             nestedScrollEnabled
             showsVerticalScrollIndicator={false}
           >
-            <Animated.View style={{ opacity: fade }}>
+            <AnimatePresence>
               {mode === 'login' && (
-                <LoginScreen
-                  ref={loginScreenRef}
-                  initialPhone={pendingPhone}
-                  onNavigateToSignup={(phone) => {
-                    if (phone) setPendingPhone(phone);
-                    switchMode('signup');
+                <Box
+                  key="login"
+                  animation="bouncy"
+                  enterStyle={{
+                    opacity: 0,
+                    scale: 0.8,
+                    y: 50
                   }}
-                  onOtpRequested={async (phone) => {
-                    setPrevMode('login');
-                    setPendingPhone(phone);
-                    switchMode('otp');
+                  exitStyle={{
+                    opacity: 0,
+                    scale: 0.8,
+                    y: 100
                   }}
-                />
+                >
+                  <LoginScreen
+                    ref={loginScreenRef}
+                    initialPhone={pendingPhone}
+                    onNavigateToSignup={(phone) => {
+                      if (phone) setPendingPhone(phone);
+                      switchMode('signup');
+                    }}
+                    onOtpRequested={async (phone) => {
+                      setPrevMode('login');
+                      setPendingPhone(phone);
+                      switchMode('otp');
+                    }}
+                  />
+                </Box>
               )}
               {mode === 'signup' && (
-                <SignupScreen
-                  embedded
-                  initialPhone={pendingPhone}
-                  onNavigateToLogin={() => switchMode('login')}
-                  onOtpRequested={async (phone) => {
-                    setPrevMode('signup');
-                    setPendingPhone(phone);
-                    switchMode('otp');
+                <Box
+                  key="signup"
+                  animation="bouncy"
+                  enterStyle={{
+                    opacity: 0,
+                    scale: 0.8,
+                    y: 50
                   }}
-                />
+                  exitStyle={{
+                    opacity: 0,
+                    scale: 0.8,
+                    y: 100
+                  }}
+                >
+                  <SignupScreen
+                    embedded
+                    initialPhone={pendingPhone}
+                    onNavigateToLogin={() => switchMode('login')}
+                    onOtpRequested={async (phone) => {
+                      setPrevMode('signup');
+                      setPendingPhone(phone);
+                      switchMode('otp');
+                    }}
+                  />
+                </Box>
               )}
               {mode === 'otp' && (
-                <InlineOtp
-                  phone={pendingPhone}
-                  origin={prevMode}
-                  onBack={() => switchMode(prevMode)}
-                  onSuccess={() => {
-                    if (prevMode === 'signup') {
-                      // Show congrats message, then go to login
-                      showInfoMessage(
-                        t('auth.signupCongratsLogin', 'Congrats! you signed up successfully, login now.'),
-                        [
-                          {
-                            label: t('auth.login', 'Login'),
-                            onPress: () => switchMode('login'),
-                          },
-                        ],
-                        t('auth.success', 'Success')
-                      );
-                    } else {
-                      // After login verification, proceed into the app
-                      try {
-                        router.replace('/(tabs)');
-                      } catch {}
-                    }
+                <Box
+                  key="otp"
+                  animation="bouncy"
+                  enterStyle={{
+                    opacity: 0,
+                    scale: 0.8,
+                    y: 50
                   }}
-                />
+                  exitStyle={{
+                    opacity: 0,
+                    scale: 0.8,
+                    y: 100
+                  }}
+                >
+                  <InlineOtp
+                    phone={pendingPhone}
+                    origin={prevMode}
+                    onBack={() => switchMode(prevMode)}
+                    onSuccess={() => {
+                      if (prevMode === 'signup') {
+                        // Show congrats message, then go to login
+                        showInfoMessage(
+                          t('auth.signupCongratsLogin', 'Congrats! you signed up successfully, login now.'),
+                          [
+                            {
+                              label: t('auth.login', 'Login'),
+                              onPress: () => switchMode('login'),
+                            },
+                          ],
+                          t('auth.success', 'Success')
+                        );
+                      } else {
+                        // After login verification, proceed into the app
+                        try {
+                          router.replace('/(tabs)');
+                        } catch {}
+                      }
+                    }}
+                  />
+                </Box>
               )}
-            </Animated.View>
+            </AnimatePresence>
           </ScrollView>
         </Box>
       </Box>
@@ -572,10 +604,10 @@ export const BackgroundLock: React.FC = () => {
       right={0}
       bottom={0}
       left={0}
-      pointerEvents="auto"
       zIndex={9998}
       // Invisible overlay that captures all touch events to lock background
       style={{
+        pointerEvents: 'auto',
         backgroundColor: 'transparent',
       }}
     >
@@ -586,10 +618,10 @@ export const BackgroundLock: React.FC = () => {
         right={10}
         width={60}
         height={60}
-        pointerEvents="none"
         zIndex={10001}
         // Creates a hole in the background lock for theme switcher access
         style={{
+          pointerEvents: 'none',
           backgroundColor: 'transparent',
         }}
       />

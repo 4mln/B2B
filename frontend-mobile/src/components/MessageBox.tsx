@@ -187,7 +187,7 @@ export const MessageBox: React.FC = () => {
           alignItems="center"
           padding="$4"
           onPress={hide}
-          pointerEvents="auto"
+          style={{ pointerEvents: 'auto' }}
           animation="quick"
           enterStyle={{ opacity: 0 }}
           exitStyle={{ opacity: 0 }}
@@ -204,10 +204,18 @@ export const MessageBox: React.FC = () => {
             shadowRadius={16}
             elevation={12}
             onPress={(e: any) => e.stopPropagation()}
-            pointerEvents="auto"
+            style={{ pointerEvents: 'auto' }}
             animation="bouncy"
-            enterStyle={{ opacity: 0, scale: 0.8, y: 20 }}
-            exitStyle={{ opacity: 0, scale: 0.8, y: 20 }}
+            enterStyle={{
+              opacity: 0,
+              scale: 0.8,
+              y: 50
+            }}
+            exitStyle={{
+              opacity: 0,
+              scale: 0.8,
+              y: 100
+            }}
             data-message-box-modal // 🆕 Identifier for focus trap
           >
           <YStack space="$3" alignItems="center">
