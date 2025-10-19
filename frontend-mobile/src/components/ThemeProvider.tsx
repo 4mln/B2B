@@ -1,7 +1,38 @@
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useEffect } from 'react';
 import { useTheme as useTamaguiTheme } from 'tamagui';
 import { useTheme } from '@/hooks/useTheme';
-import { Theme } from '@/services/themeService';
+import { Theme, initializeThemeService } from '@/services/themeService';
+
+// Theme color mappings for Tamagui integration
+const lightThemeColors = {
+  background: '$backgroundLight0',
+  backgroundSecondary: '$backgroundLight50',
+  backgroundTertiary: '$backgroundLight100',
+  text: '$textLight900',
+  textSecondary: '$textLight700',
+  textTertiary: '$textLight500',
+  border: '$borderLight100',
+  borderSecondary: '$borderLight200',
+  primary: '$primary500',
+  primaryLight: '$primary100',
+  primaryDark: '$primary700',
+  error: '$error500',
+};
+
+const darkThemeColors = {
+  background: '$backgroundDark0',
+  backgroundSecondary: '$backgroundDark50',
+  backgroundTertiary: '$backgroundLight100',
+  text: '$textDark100',
+  textSecondary: '$textDark300',
+  textTertiary: '$textLight500',
+  border: '$borderLight100',
+  borderSecondary: '$borderLight200',
+  primary: '$primary500',
+  primaryLight: '$primary100',
+  primaryDark: '$primary700',
+  error: '$error500',
+};
 
 /**
  * Theme Context
@@ -42,16 +73,57 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
   defaultTheme = 'light'
 }) => {
-  const customThemeData = useTheme();
+  const customThemeData = useTheme({ trackUsage: true });
   const tamaguiTheme = useTamaguiTheme();
 
-  // Bridge between custom theme and Tamagui theme
-  const unifiedThemeData = useMemo<ThemeContextValue>(() => ({
-    ...customThemeData,
-    // Add Tamagui theme integration
-    tamaguiTheme: tamaguiTheme || {},
-    themeName: defaultTheme,
-  }), [customThemeData, tamaguiTheme, defaultTheme]);
+  // Initialize theme service on mount
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await initializeThemeService();
+        console.log('[ThemeProvider] Theme service initialized');
+      } catch (error) {
+        console.error('[ThemeProvider] Failed to initialize theme service:', error);
+      }
+    };
+    init();
+  }, []);
+
+  // Sync theme changes with Tamagui using requestAnimationFrame to avoid circular updates
+  useEffect(() => {
+    const isDark = customThemeData.theme?.isDark ?? false;
+    console.log('[ThemeProvider] Theme changed:', isDark ? 'dark' : 'light');
+    
+    // Schedule theme update for next frame to avoid synchronous updates
+    const frameId = requestAnimationFrame(() => {
+      if (typeof document !== 'undefined') {
+        document.documentElement?.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      }
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [customThemeData.theme?.isDark]);
+
+  // Sync theme changes with Tamagui
+  const unifiedThemeData = useMemo<ThemeContextValue>(() => {
+    const isDark = customThemeData.theme?.isDark ?? false;
+    const themeName = isDark ? 'dark' : 'light';
+
+    return {
+      ...customThemeData,
+      isDark,
+      isLight: !isDark,
+      // Add Tamagui theme integration with proper token mapping
+      tamaguiTheme: {
+        ...tamaguiTheme,
+        name: themeName,
+        colors: isDark ? darkThemeColors : lightThemeColors,
+        background: isDark ? '$backgroundDark0' : '$backgroundLight0',
+        color: isDark ? '$textDark100' : '$textLight900',
+      },
+      themeName,
+    };
+  }, [customThemeData, tamaguiTheme]);
 
   return (
     <ThemeContext.Provider value={unifiedThemeData}>

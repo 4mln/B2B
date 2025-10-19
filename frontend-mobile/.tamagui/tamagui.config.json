@@ -35930,7 +35930,26 @@
     },
     "onlyAllowShorthands": false,
     "fontLanguages": [],
-    "animations": {},
+    "animations": {
+      "bouncy": {
+        "type": "spring",
+        "damping": 20,
+        "mass": 1.2,
+        "stiffness": 250
+      },
+      "quick": {
+        "type": "spring",
+        "damping": 25,
+        "mass": 1,
+        "stiffness": 300
+      },
+      "slow": {
+        "type": "spring",
+        "damping": 15,
+        "mass": 1,
+        "stiffness": 200
+      }
+    },
     "media": {
       "sm": {
         "maxWidth": 860

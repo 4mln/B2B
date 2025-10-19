@@ -15,6 +15,7 @@ import { useThemeConfig, useFeatureConfig, useSetting } from '@/hooks/useConfig'
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { refreshConfig, clearConfig } from '@/services/configService';
 import { refreshFeatureFlags, clearFeatureFlags } from '@/services/featureFlags';
+import { useThemeContext } from '@/components/ThemeProvider';
 
 /**
  * Configuration Screen
@@ -28,11 +29,13 @@ export const ConfigScreen: React.FC = () => {
 
   // Get theme configuration
   const { theme, loading: themeLoading, error: themeError } = useThemeConfig();
-  
+
   // Get feature flags
   const { enabled: analyticsEnabled } = useFeatureFlag('analytics');
   const { enabled: monitoringEnabled } = useFeatureFlag('monitoring');
-  const { enabled: darkModeEnabled } = useFeatureFlag('dark_mode');
+
+  // Use theme context for theme switching
+  const { isDark, toggleDarkMode } = useThemeContext();
   
   // Get settings
   const { value: apiTimeout } = useSetting('api_timeout');
@@ -160,8 +163,20 @@ export const ConfigScreen: React.FC = () => {
         <View style={styles.configItem}>
           <Text style={styles.configLabel}>{t('profile.theme', 'Theme')}</Text>
           <Switch
-            value={darkModeEnabled}
-            onValueChange={(value) => handleToggleFeature('dark_mode', value)}
+            value={isDark}
+            onValueChange={async (value) => {
+              try {
+                console.log('[ConfigScreen] Toggling theme to:', value ? 'dark' : 'light');
+                await toggleDarkMode();
+                console.log('[ConfigScreen] Theme toggle completed successfully');
+              } catch (error) {
+                console.error('[ConfigScreen] Theme toggle failed:', error);
+                Alert.alert(
+                  t('errors.error', 'Error'),
+                  t('config.themeToggleFailed', 'Failed to toggle theme')
+                );
+              }
+            }}
           />
         </View>
       </View>

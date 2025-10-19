@@ -186,19 +186,22 @@ class ThemeService {
    */
   async setTheme(name: string): Promise<void> {
     try {
+      console.log('[ThemeService] setTheme called with:', name);
       if (!this.config) {
         throw new Error('Theme service not initialized');
       }
-      
+
       this.config.currentTheme = name;
       await this.saveConfig();
       await this.applyTheme();
-      
+
       // Track theme change
       trackFeatureUsage('theme', 'change', {
         themeName: name,
         isDark: this.currentTheme?.isDark || false,
       });
+
+      console.log('[ThemeService] setTheme completed for:', name);
     } catch (error) {
       console.error('[ThemeService] Failed to set theme:', error);
       throw error;
@@ -210,23 +213,29 @@ class ThemeService {
    */
   async toggleDarkMode(): Promise<void> {
     try {
+      console.log('[ThemeService] toggleDarkMode called');
       if (!this.config) {
         throw new Error('Theme service not initialized');
       }
-      
+
       const currentTheme = this.getCurrentTheme();
       if (!currentTheme) {
         throw new Error('No current theme');
       }
-      
+
+      console.log('[ThemeService] Current theme:', currentTheme.name, 'isDark:', currentTheme.isDark);
       const newThemeName = currentTheme.isDark ? 'light' : 'dark';
+      console.log('[ThemeService] Switching to theme:', newThemeName);
+
       await this.setTheme(newThemeName);
-      
+
       // Track dark mode toggle
       trackFeatureUsage('theme', 'toggle_dark_mode', {
         newTheme: newThemeName,
         wasDark: currentTheme.isDark,
       });
+
+      console.log('[ThemeService] toggleDarkMode completed successfully');
     } catch (error) {
       console.error('[ThemeService] Failed to toggle dark mode:', error);
       throw error;
@@ -403,14 +412,19 @@ class ThemeService {
    */
   private async applyTheme(): Promise<void> {
     try {
+      console.log('[ThemeService] applyTheme called, current config:', this.config?.currentTheme);
       if (!this.config) {
         return;
       }
-      
+
       const theme = this.getTheme(this.config.currentTheme);
       if (theme) {
+        console.log('[ThemeService] Applying theme:', theme.name, 'isDark:', theme.isDark);
         this.currentTheme = theme;
         this.notifyListeners();
+        console.log('[ThemeService] Theme applied and listeners notified');
+      } else {
+        console.error('[ThemeService] Failed to get theme for:', this.config.currentTheme);
       }
     } catch (error) {
       console.error('[ThemeService] Failed to apply theme:', error);
@@ -651,12 +665,19 @@ class ThemeService {
    * Notify all listeners
    */
   private notifyListeners(): void {
+    console.log('[ThemeService] notifyListeners called, current theme:', this.currentTheme?.name);
     if (this.currentTheme) {
       this.listeners.forEach((listeners, key) => {
+        console.log('[ThemeService] Notifying listeners for key:', key, 'count:', listeners.size);
         if (key === 'theme') {
-          listeners.forEach(callback => callback(this.currentTheme!));
+          listeners.forEach(callback => {
+            console.log('[ThemeService] Calling listener callback');
+            callback(this.currentTheme!);
+          });
         }
       });
+    } else {
+      console.log('[ThemeService] No current theme to notify listeners about');
     }
   }
 }

@@ -29977,6 +29977,27 @@ var configBase = {
   tokens,
   // Enable compiler optimizations
   enableCSSInterop: true,
+  // Enable animations with native driver
+  animations: {
+    bouncy: {
+      type: "spring",
+      damping: 20,
+      mass: 1.2,
+      stiffness: 250
+    },
+    quick: {
+      type: "spring",
+      damping: 25,
+      mass: 1,
+      stiffness: 300
+    },
+    slow: {
+      type: "spring",
+      damping: 15,
+      mass: 1,
+      stiffness: 200
+    }
+  },
   // Compiler settings for better performance
   experimentalFlattening: true,
   cssInterop: {

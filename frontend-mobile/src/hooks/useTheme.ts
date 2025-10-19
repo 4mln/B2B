@@ -177,19 +177,47 @@ export const useTheme = (options: UseThemeOptions = {}): UseThemeReturn => {
   }, [trackUsage]);
 
   useEffect(() => {
-    // Get initial theme
-    const initialTheme = getCurrentTheme();
-    setThemeState(initialTheme);
-    setLoading(false);
+    let unsubscribe: (() => void) | null = null;
 
-    // Subscribe to theme changes
-    const unsubscribe = subscribeToTheme((newTheme) => {
-      setThemeState(newTheme);
-      setLoading(false);
-      setError(null);
-    });
+    const initializeTheme = () => {
+      try {
+        // Get initial theme
+        const initialTheme = getCurrentTheme();
+        console.log('[useTheme] Initial theme:', initialTheme?.name, initialTheme?.isDark);
+        setThemeState(initialTheme);
+        setLoading(false);
 
-    return unsubscribe;
+        // Subscribe to theme changes
+        unsubscribe = subscribeToTheme((newTheme) => {
+          console.log('[useTheme] Theme changed:', newTheme.name, newTheme.isDark);
+          setThemeState(newTheme);
+          setLoading(false);
+          setError(null);
+        });
+      } catch (error) {
+        console.error('[useTheme] Failed to initialize theme:', error);
+        setError(error instanceof Error ? error.message : 'Failed to initialize theme');
+        setLoading(false);
+      }
+    };
+
+    // Try to initialize immediately
+    initializeTheme();
+
+    // Also try again after a short delay to handle race conditions
+    const timeoutId = setTimeout(() => {
+      if (!unsubscribe) {
+        console.log('[useTheme] Retrying theme initialization...');
+        initializeTheme();
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   return {

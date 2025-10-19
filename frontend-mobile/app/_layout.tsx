@@ -5,8 +5,10 @@ import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { TamaguiProvider } from 'tamagui';
+import { TamaguiProvider, YStack, ThemeName } from 'tamagui';
 import { ThemeProvider, useThemeContext } from '../src/components/ThemeProvider';
+import { ThemeWrapper } from '../src/components/ThemeWrapper';
+import { initializeThemeService } from '../src/services/themeService';
 import { AppWindows, WindowManagerProvider } from '../src/components/window-system';
 import '../src/i18n';
 import '../src/polyfills/web';
@@ -35,66 +37,75 @@ const queryClient = new QueryClient();
 
 export default function RootLayout() {
   console.log('🔧 Main Layout: Component rendering...');
-  const colorScheme = useColorScheme();
   const { isAuthenticated } = useAuth();
   const initializeAuth = useAuthStore((s: any) => {
     console.log('🔧 Main Layout: Store selector called, initializeAuth:', typeof s.initializeAuth);
     return s.initializeAuth;
   });
   
-  console.log('🔧 Main Layout: initializeAuth function:', typeof initializeAuth);
-
-  // Initialize auth once when layout mounts. Avoid direct or duplicate calls which can
-  // re-enter `initializeAuth` and leave `isLoading` stuck true.
+  // Initialize auth and theme on mount
   useEffect(() => {
-    console.log('🔧 Main Layout: useEffect called, initializing auth...');
-    (async () => {
+    const init = async () => {
       try {
-        console.log('🔧 Main Layout: invoking initializeAuth (await)...');
-        await initializeAuth();
-        console.log('🔧 Main Layout: initializeAuth completed');
+        console.log('🔧 Main Layout: initializing...');
+        await Promise.all([
+          initializeAuth(),
+          initializeThemeService()
+        ]);
+        console.log('🔧 Main Layout: initialization completed');
       } catch (error) {
-        console.error('🔧 Main Layout: Error calling initializeAuth from useEffect:', error);
+        console.error('🔧 Main Layout: Error during initialization:', error);
       }
-    })();
-  }, []); // Empty dependency array to run only once
-
-  // Auth redirection is handled by app/index.tsx via <Redirect />
-  // Debug overlay removed: earlier implementation caused nested updates in some environments.
+    };
+    init();
+  }, []);
 
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <TamaguiProvider config={require('../tamagui.config').default} defaultTheme="light">
-              <ThemeProvider>
-                <PortalProvider>
-                  <WindowManagerProvider>
-                    <ConnectionBanner />
-                    <LoginWall />
-                    <BackgroundLock />
-                    <ThemeSwitcher />
-                    <Stack>
-                      <Stack.Screen name="index" options={{ headerShown: false }} />
-                      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                      <Stack.Screen name="profile/sessions" options={{ headerShown: false }} />
-                      <Stack.Screen name="product/[id]" options={{ headerShown: false, presentation: 'modal' }} />
-                      <Stack.Screen name="product/create" options={{ headerShown: false, presentation: 'modal' }} />
-                      <Stack.Screen name="chat/[id]" options={{ headerShown: false, presentation: 'modal' }} />
-                      <Stack.Screen name="rfq/create" options={{ headerShown: false, presentation: 'modal' }} />
-                      <Stack.Screen name="stores" options={{ headerShown: false }} />
-                      <Stack.Screen name="window-test" options={{ headerShown: false }} />
-                      <Stack.Screen name="modal" options={{ presentation: 'modal', title: undefined }} />
-                    </Stack>
-                    <AppWindows />
-                  </WindowManagerProvider>
-                </PortalProvider>
-              </ThemeProvider>
-            </TamaguiProvider>
-          </NavigationThemeProvider>
+          <TamaguiProvider config={require('../tamagui.config').default}>
+            <ThemeProvider>
+              <InnerLayout />
+            </ThemeProvider>
+          </TamaguiProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
+  );
+}
+
+// Inner layout with access to theme context
+function InnerLayout() {
+  const { isDark } = useThemeContext();
+
+  return (
+    <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      <PortalProvider>
+        <WindowManagerProvider>
+          <ThemeWrapper>
+            <YStack flex={1} backgroundColor="$background">
+              <ConnectionBanner />
+              <LoginWall />
+              <BackgroundLock />
+              <ThemeSwitcher />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="profile/sessions" />
+                <Stack.Screen name="product/[id]" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="product/create" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="chat/[id]" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="rfq/create" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="stores" />
+                <Stack.Screen name="window-test" />
+                <Stack.Screen name="modal" options={{ presentation: 'modal', title: undefined }} />
+              </Stack>
+              <AppWindows />
+            </YStack>
+          </ThemeWrapper>
+        </WindowManagerProvider>
+      </PortalProvider>
+    </NavigationThemeProvider>
   );
 }
