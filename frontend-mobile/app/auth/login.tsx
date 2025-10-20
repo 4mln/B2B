@@ -193,7 +193,7 @@ const LoginScreen = forwardRef<LoginScreenRef, LoginScreenProps>((props, ref) =>
                 {t('login.title')}
               </Heading>
               {/* Empty space after H1 */}
-              <Box height={20} />
+              <Box height={25} />
               <Text
                 textAlign="center"
                 color={isDark ? '$textDark300' : '$textLight600'}
@@ -218,6 +218,7 @@ const LoginScreen = forwardRef<LoginScreenRef, LoginScreenProps>((props, ref) =>
                       ref={phoneInputRef}
                       placeholder={t('login.phonePlaceholder')}
                       value={value}
+                      marginTop={-20}
                       onChangeText={onChange}
                       onBlur={onBlur}
                       keyboardType="phone-pad"
@@ -243,7 +244,7 @@ const LoginScreen = forwardRef<LoginScreenRef, LoginScreenProps>((props, ref) =>
                 )}
               />
               {!!errors.phone?.message && (
-                <Text color="$error500" fontSize="$xs" textAlign="center">
+                <Text color="$error500" fontSize="$s" textAlign="center">
                   {String(errors.phone.message)}
                 </Text>
               )}
@@ -256,10 +257,10 @@ const LoginScreen = forwardRef<LoginScreenRef, LoginScreenProps>((props, ref) =>
                 paddingVertical: 10,
                 paddingHorizontal: 20,
                 alignItems: 'center',
-                marginTop: 12,
+                marginTop: -20,
                 opacity: (!watchedPhone?.trim() || isLoading) ? 0.6 : 1,
-                minHeight: 35,
-                width: '45%',
+                minHeight: 30,
+                width: '55%',
                 height: 35,
                 alignSelf: 'center',
               }}
@@ -273,7 +274,7 @@ const LoginScreen = forwardRef<LoginScreenRef, LoginScreenProps>((props, ref) =>
                   <Ionicons name="phone-portrait-outline" color="#ffffff" size={18} />
                 )}
                 <Text
-                  fontSize="$sm"
+                  fontSize="$s"
                   fontWeight="$semibold"
                   color={isDark ? '$textDark100' : '$textLight900'}
                 >
@@ -282,14 +283,12 @@ const LoginScreen = forwardRef<LoginScreenRef, LoginScreenProps>((props, ref) =>
               </HStack>
             </TouchableOpacity>
 
-            {/* Empty space after button */}
-            <Box height={20} />
           </VStack>
 
           {/* Footer */}
           <VStack alignItems="center" space="$sm">
             <Text
-              fontSize="$xs"
+              fontSize="$s"
               color={isDark ? '$textDark300' : '$textLight600'}
               textAlign="center"
               fontWeight="$normal"
