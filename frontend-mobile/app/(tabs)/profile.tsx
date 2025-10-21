@@ -2,6 +2,7 @@ import { useAuth, useProfile } from '@/features/auth/hooks';
 import { useStoreCapabilities } from '@/features/stores/hooks';
 import { useWalletBalance } from '@/features/wallet/hooks';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeContext } from '@/components/ThemeProvider';
 import i18n from '@/i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -24,8 +25,7 @@ export default function ProfileScreen() {
   const { data: profile } = useProfile();
   const { data: walletBalance } = useWalletBalance();
   const { canManageStores, canSell, canPurchase, user: storeUser } = useStoreCapabilities();
-  const mode = useThemeModeStore((s) => s.mode);
-  const setMode = useThemeModeStore((s) => s.setMode);
+  const { setTheme } = useThemeContext();
   
   // Subscribe to theme changes
   const themeMode = useThemeModeStore();
@@ -41,10 +41,10 @@ export default function ProfileScreen() {
     forceUpdate(prev => prev + 1);
   }, [themeMode.mode]);
 
-  const handleThemeToggle = (value: boolean) => {
+  const handleThemeToggle = async (value: boolean) => {
     const newMode = value ? 'dark' : 'light';
-    console.log('Theme toggle:', { value, newMode, currentMode: mode });
-    setMode(newMode);
+    console.log('Theme toggle:', { value, newMode });
+    await setTheme(newMode);
     forceUpdate(prev => prev + 1);
   };
 
@@ -435,11 +435,11 @@ export default function ProfileScreen() {
                 <Ionicons name="moon-outline" size={20} color="#3b82f6" />
               </Box>
               <Text fontSize="$md" fontWeight="$medium" color="$textLight900">
-                {t('profile.theme')} ({mode})
+                {t('profile.theme')} ({isDark ? 'dark' : 'light'})
               </Text>
             </HStack>
             <Switch
-              value={mode === 'dark'}
+              value={isDark}
               onValueChange={handleThemeToggle}
               trackColor={{ false: '#d1d5db', true: '#bfdbfe' }}
               thumbColor={mode === 'dark' ? '#3b82f6' : '#9ca3af'}

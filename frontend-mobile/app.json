@@ -62,14 +62,7 @@
           }
         }
       ],
-      [
-        "expo-font",
-        {
-          "Vazirmatn-Regular": "./src/assets/fonts/Vazirmatn-Regular.ttf",
-          "Vazirmatn-Medium": "./src/assets/fonts/Vazirmatn-Medium.ttf",
-          "Vazirmatn-Bold": "./src/assets/fonts/Vazirmatn-Bold.ttf"
-        }
-      ],
+      "expo-font",
       [
         "expo-localization",
         {

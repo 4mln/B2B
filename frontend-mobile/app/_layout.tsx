@@ -5,7 +5,8 @@ import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { TamaguiProvider, YStack, ThemeName } from 'tamagui';
+import { YStack } from 'tamagui';
+import AppTamaguiProvider from '../src/components/TamaguiProvider';
 import { ThemeProvider, useThemeContext } from '../src/components/ThemeProvider';
 import { ThemeWrapper } from '../src/components/ThemeWrapper';
 import { initializeThemeService } from '../src/services/themeService';
@@ -64,11 +65,11 @@ export default function RootLayout() {
     <ErrorBoundary>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <TamaguiProvider config={require('../tamagui.config').default}>
+          <AppTamaguiProvider>
             <ThemeProvider>
               <InnerLayout />
             </ThemeProvider>
-          </TamaguiProvider>
+          </AppTamaguiProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </ErrorBoundary>

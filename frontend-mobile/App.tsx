@@ -50,18 +50,8 @@ export default function App() {
   const [themeServiceInitialized, setThemeServiceInitialized] = useState(false);
   const { isAuthenticated, user } = useAuthStore();
 
-  // Load Vazirmatn fonts early so font-family references resolve correctly
-  const [fontsLoaded] = useFonts({
-    'Vazirmatn-Regular': require('./src/assets/fonts/Vazirmatn-Regular.ttf'),
-    'Vazirmatn-Medium': require('./src/assets/fonts/Vazirmatn-Medium.ttf'),
-    'Vazirmatn-Bold': require('./src/assets/fonts/Vazirmatn-Bold.ttf'),
-    'Vazirmatn-Light': require('./src/assets/fonts/Vazirmatn-Light.ttf'),
-    'Vazirmatn-SemiBold': require('./src/assets/fonts/Vazirmatn-SemiBold.ttf'),
-    'Vazirmatn-Thin': require('./src/assets/fonts/Vazirmatn-Thin.ttf'),
-    'Vazirmatn-Black': require('./src/assets/fonts/Vazirmatn-Black.ttf'),
-    'Vazirmatn-ExtraBold': require('./src/assets/fonts/Vazirmatn-ExtraBold.ttf'),
-    'Vazirmatn-ExtraLight': require('./src/assets/fonts/Vazirmatn-ExtraLight.ttf'),
-  });
+  // Load system fonts only; Vazirmatn is injected on web via Google Fonts
+  const [fontsLoaded] = useFonts({});
 
   useEffect(() => {
     initializeApp();

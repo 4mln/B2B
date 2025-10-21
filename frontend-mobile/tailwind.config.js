@@ -36,8 +36,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        'persian': ['Vazir', 'Tahoma', 'Arial', 'sans-serif'],
-        'english': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        persian: ['Vazirmatn', 'Tahoma', 'Arial', 'sans-serif'],
+        english: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       spacing: {
         '18': '4.5rem',

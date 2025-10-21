@@ -16,13 +16,13 @@ import SignupScreen from '../../app/auth/signup';
 
 // Theme switcher component
 export const ThemeSwitcher: React.FC = () => {
-  const { isDark, theme, toggleDarkMode } = useThemeContext();
+  const { isDark, setTheme, toggleDarkMode } = useThemeContext();
   const [isPanelVisible, setIsPanelVisible] = React.useState(false);
 
   const handleThemeChange = async (newTheme: 'light' | 'dark') => {
     try {
       console.log('🔍 ThemeSwitcher: Switching to theme:', newTheme);
-      await toggleDarkMode();
+      await setTheme(newTheme);
       togglePanel();
     } catch (error) {
       console.error('🔍 ThemeSwitcher: Failed to set theme:', error);

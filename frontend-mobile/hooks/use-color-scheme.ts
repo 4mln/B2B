@@ -1,7 +1,9 @@
 export { useColorScheme as useDeviceColorScheme } from 'react-native';
-import { useThemeModeStore } from '@/theme/modeStore';
+import { ColorSchemeName } from 'react-native';
+import { useThemeContext } from '@/components/ThemeProvider';
 
-export const useColorScheme = () => {
-  const mode = useThemeModeStore((s) => s.mode);
-  return mode;
+// Bridge hook for legacy imports to derive from unified theme context
+export const useColorScheme = (): ColorSchemeName => {
+  const { isDark } = useThemeContext();
+  return isDark ? 'dark' : 'light';
 };
