@@ -223,8 +223,8 @@ const darkTheme = {
 
 const configBase = {
   fonts: {
-    heading: systemFont,
-    body: systemFont,
+    heading: persianFont,
+    body: persianFont,
     persian: persianFont,
   },
   tokens,

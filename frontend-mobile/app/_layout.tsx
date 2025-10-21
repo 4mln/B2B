@@ -3,6 +3,7 @@ import { PortalProvider } from '@tamagui/portal';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
+import { useFonts } from 'expo-font';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider, YStack, ThemeName } from 'tamagui';
@@ -37,6 +38,14 @@ const queryClient = new QueryClient();
 
 export default function RootLayout() {
   console.log('🔧 Main Layout: Component rendering...');
+  // Ensure Vazirmatn is loaded for web and native before rendering
+  useFonts({
+    'Vazirmatn-Regular': require('../src/assets/fonts/Vazirmatn-Regular.ttf'),
+    'Vazirmatn-Medium': require('../src/assets/fonts/Vazirmatn-Medium.ttf'),
+    'Vazirmatn-Bold': require('../src/assets/fonts/Vazirmatn-Bold.ttf'),
+    'Vazirmatn-Light': require('../src/assets/fonts/Vazirmatn-Light.ttf'),
+    'Vazirmatn-SemiBold': require('../src/assets/fonts/Vazirmatn-SemiBold.ttf'),
+  });
   const { isAuthenticated } = useAuth();
   const initializeAuth = useAuthStore((s: any) => {
     console.log('🔧 Main Layout: Store selector called, initializeAuth:', typeof s.initializeAuth);
