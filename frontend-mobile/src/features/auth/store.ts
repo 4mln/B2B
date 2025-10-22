@@ -1,4 +1,5 @@
 import '@/polyfills/web';
+import { authService } from '@/services/auth';
 import { deleteItem, getItem, saveItem } from "@/utils/secureStore";
 import { create } from 'zustand';
 import { User, hasCapability } from "./types";

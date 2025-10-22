@@ -79,8 +79,10 @@ export const authService = {
       };
     }
     try {
-      // Use correct backend endpoint with /auth prefix
-      const response = await apiClient.post('/auth/otp/request', data);
+      // Backend expects 'mobile_number' not 'phone'
+      const response = await apiClient.post('/auth/otp/request', {
+        mobile_number: data.phone
+      });
       return {
         data: response.data,
         success: true,
@@ -122,9 +124,10 @@ export const authService = {
       }
     }
     try {
+      // Backend expects 'mobile_number' and 'otp_code' not 'phone' and 'code'
       const response = await apiClient.post('/auth/otp/verify', {
-        phone: data.phone,
-        code: data.otp,
+        mobile_number: data.phone,
+        otp_code: data.otp,
       });
       return {
         data: response.data,
@@ -166,7 +169,8 @@ export const authService = {
    */
   async refreshToken(data: RefreshTokenRequest): Promise<ApiResponse<RefreshTokenResponse>> {
     try {
-      const response = await apiClient.post('/refresh', data);
+      // Backend expects { refreshToken } not { refresh_token }
+      const response = await apiClient.post('/auth/refresh', data);
       return {
         data: response.data,
         success: true,

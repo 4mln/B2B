@@ -37,8 +37,9 @@ export const useVerifyOTP = () => {
     mutationFn: authService.verifyOTP,
     onSuccess: async (response) => {
       if (response.success && response.data) {
-        // Backend returns { access_token, token_type, user }
-        await login(response.data.user, response.data.access_token);
+        // Backend returns { access_token, refresh_token, token_type, user }
+        const refreshToken = (response.data as any).refresh_token;
+        await login(response.data.user, response.data.access_token, refreshToken);
         queryClient.invalidateQueries({ queryKey: ['profile'] });
       }
     },

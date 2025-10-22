@@ -1,4 +1,5 @@
 import { MessageBox } from '@/components/MessageBox';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useThemeContext } from '@/components/ThemeProvider';
 import { useTheme as useTamaguiTheme } from 'tamagui';
 import { showErrorMessage, showInfoMessage, showWarningMessage, useMessageBoxStore } from '@/context/messageBoxStore';
@@ -14,137 +15,8 @@ import { create } from 'zustand';
 import LoginScreen from '../../app/auth/login';
 import SignupScreen from '../../app/auth/signup';
 
-// Theme switcher component
-export const ThemeSwitcher: React.FC = () => {
-  const { isDark, setTheme } = useThemeContext();
-  const [isPanelVisible, setIsPanelVisible] = React.useState(false);
-
-  const handleThemeChange = async (newTheme: 'light' | 'dark') => {
-    try {
-      console.log('🔍 ThemeSwitcher: Switching to theme:', newTheme);
-      await setTheme(newTheme);
-      togglePanel();
-    } catch (error) {
-      console.error('🔍 ThemeSwitcher: Failed to set theme:', error);
-    }
-  };
-
-  const togglePanel = () => {
-    setIsPanelVisible(!isPanelVisible);
-  };
-
-  return (
-    <Box position="absolute" top={60} right={20} zIndex={10000}>
-      {/* Trigger Button */}
-      <Pressable onPress={togglePanel} style={{ padding: 8 }}>
-        <Box
-          width={40}
-          height={40}
-          borderRadius="$full"
-          backgroundColor={isDark ? '$backgroundDark50' : '$backgroundLight100'}
-          borderWidth={1}
-          borderColor={isDark ? '$borderLight300' : '$borderLight200'}
-          alignItems="center"
-          justifyContent="center"
-          shadowColor="#000"
-          shadowOpacity={0.1}
-          shadowRadius={4}
-        >
-          <Ionicons
-            name={isDark ? 'sunny' : 'moon'}
-            size={20}
-            color={isDark ? '#fbbf24' : '#374151'}
-          />
-        </Box>
-      </Pressable>
-
-      {/* Sliding Panel */}
-      <AnimatePresence>
-        {isPanelVisible && (
-          <Box
-            position="absolute"
-            top={50}
-            right={0}
-            zIndex={10000}
-            animation="bouncy"
-            enterStyle={{
-              opacity: 0,
-              scale: 0.8,
-              y: 50
-            }}
-            exitStyle={{
-              opacity: 0,
-              scale: 0.8,
-              y: -100
-            }}
-          >
-            <Box
-              width={180}
-              backgroundColor={isDark ? '$backgroundDark0' : '$backgroundLight0'}
-              borderRadius="$md"
-              borderWidth={1}
-              borderColor={isDark ? '$borderLight300' : '$borderLight200'}
-              padding="$md"
-              shadowColor="#000"
-              shadowOpacity={0.15}
-              shadowRadius={8}
-            >
-              <VStack space="$sm">
-                <Text fontSize="$sm" fontWeight="$medium" textAlign="center" color="$textLight600">
-                  Switch Theme
-                </Text>
-
-                <HStack space="$sm" justifyContent="center">
-                  <Pressable
-                    onPress={() => handleThemeChange('light')}
-                    style={{ flex: 1, alignItems: 'center', padding: 8 }}
-                  >
-                    <Box
-                      width={36}
-                      height={36}
-                      borderRadius="$full"
-                      backgroundColor={!isDark ? '$primary500' : '$backgroundLight100'}
-                      borderWidth={2}
-                      borderColor={!isDark ? '$primary500' : '$borderLight300'}
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Ionicons name="sunny" size={18} color={!isDark ? 'white' : '$textLight600'} />
-                    </Box>
-                    <Text fontSize="$xs" marginTop="$xs" color="$textLight600">
-                      Light
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={() => handleThemeChange('dark')}
-                    style={{ flex: 1, alignItems: 'center', padding: 8 }}
-                  >
-                    <Box
-                      width={36}
-                      height={36}
-                      borderRadius="$full"
-                      backgroundColor={isDark ? '$primary500' : '$backgroundLight100'}
-                      borderWidth={2}
-                      borderColor={isDark ? '$primary500' : '$borderLight300'}
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Ionicons name="moon" size={18} color={isDark ? 'white' : '$textLight600'} />
-                    </Box>
-                    <Text fontSize="$xs" marginTop="$xs" color="$textLight600">
-                      Dark
-                    </Text>
-                  </Pressable>
-                </HStack>
-              </VStack>
-            </Box>
-          </Box>
-        )}
-      </AnimatePresence>
-    </Box>
-  );
-};
+// Export ThemeSwitcher from separate file
+export { ThemeSwitcher } from '@/components/ThemeSwitcher';
 
 // Store for managing login wall state
 interface LoginWallState {

@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider, YStack, ThemeName } from 'tamagui';
 import { ThemeProvider, useThemeContext } from '../src/components/ThemeProvider';
@@ -71,15 +72,17 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <TamaguiProvider config={require('../tamagui.config').default}>
-            <ThemeProvider>
-              <InnerLayout />
-            </ThemeProvider>
-          </TamaguiProvider>
-        </QueryClientProvider>
-      </SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <TamaguiProvider config={require('../tamagui.config').default}>
+              <ThemeProvider>
+                <InnerLayout />
+              </ThemeProvider>
+            </TamaguiProvider>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     </ErrorBoundary>
   );
 }
