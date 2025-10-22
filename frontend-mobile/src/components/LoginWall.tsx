@@ -34,7 +34,13 @@ export const ThemeSwitcher: React.FC = () => {
   };
 
   return (
-    <Box position="absolute" top={60} right={20} zIndex={10000}>
+    <Box 
+      position="absolute" 
+      top={60} 
+      right={20} 
+      zIndex={10000}
+      style={{ pointerEvents: 'auto' }}
+    >
       {/* Trigger Button */}
       <Pressable onPress={togglePanel} style={{ padding: 8 }}>
         <Box
@@ -602,22 +608,7 @@ export const BackgroundLock: React.FC = () => {
         pointerEvents: 'auto',
         backgroundColor: 'transparent',
       }}
-    >
-      {/* Exclude theme switcher area from background lock */}
-      <Box
-        position="absolute"
-        top={50}
-        right={10}
-        width={60}
-        height={60}
-        zIndex={10001}
-        // Creates a hole in the background lock for theme switcher access
-        style={{
-          pointerEvents: 'none',
-          backgroundColor: 'transparent',
-        }}
-      />
-    </Box>
+    />
   );
 };
 
