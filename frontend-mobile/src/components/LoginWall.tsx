@@ -8,16 +8,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StatusBar, TextInput } from 'react-native';
+import { Animated, Pressable, ScrollView, StatusBar, TextInput, PanResponder, Dimensions } from 'react-native';
 import { AnimatePresence, Stack as Box, Button, XStack as HStack, Spinner, Text, YStack as VStack } from 'tamagui';
 import { create } from 'zustand';
 import LoginScreen from '../../app/auth/login';
 import SignupScreen from '../../app/auth/signup';
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 // Theme switcher component
 export const ThemeSwitcher: React.FC = () => {
   const { isDark, setTheme } = useThemeContext();
   const [isPanelVisible, setIsPanelVisible] = React.useState(false);
+  
+  // Position state for dragging
+  const pan = React.useRef(new Animated.ValueXY({ x: SCREEN_WIDTH - 80, y: 60 })).current;
+  const [isDragging, setIsDragging] = React.useState(false);
 
   const handleThemeChange = async (newTheme: 'light' | 'dark') => {
     try {
@@ -33,16 +39,74 @@ export const ThemeSwitcher: React.FC = () => {
     setIsPanelVisible(!isPanelVisible);
   };
 
+  // Pan responder for drag functionality
+  const panResponder = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only start dragging if moved more than 5 pixels
+        return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
+      },
+      onPanResponderGrant: () => {
+        setIsDragging(true);
+        pan.setOffset({
+          x: (pan.x as any)._value,
+          y: (pan.y as any)._value,
+        });
+      },
+      onPanResponderMove: Animated.event(
+        [null, { dx: pan.x, dy: pan.y }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: (_, gestureState) => {
+        pan.flattenOffset();
+        
+        // Check if it was a tap (small movement)
+        const isTap = Math.abs(gestureState.dx) < 5 && Math.abs(gestureState.dy) < 5;
+        
+        setTimeout(() => {
+          setIsDragging(false);
+          
+          // If it was a tap, toggle the panel
+          if (isTap) {
+            togglePanel();
+          }
+        }, 0);
+
+        // Keep within screen bounds
+        const currentX = (pan.x as any)._value;
+        const currentY = (pan.y as any)._value;
+        
+        const boundedX = Math.max(0, Math.min(SCREEN_WIDTH - 80, currentX));
+        const boundedY = Math.max(0, Math.min(SCREEN_HEIGHT - 80, currentY));
+
+        if (currentX !== boundedX || currentY !== boundedY) {
+          Animated.spring(pan, {
+            toValue: { x: boundedX, y: boundedY },
+            useNativeDriver: false,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
   return (
-    <Box 
-      position="absolute" 
-      top={60} 
-      right={20} 
-      zIndex={10000}
-      style={{ pointerEvents: 'auto' }}
+    <Animated.View
+      style={{
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        transform: [
+          { translateX: pan.x },
+          { translateY: pan.y },
+        ],
+        zIndex: 10000,
+        pointerEvents: 'auto',
+      }}
+      {...panResponder.panHandlers}
     >
       {/* Trigger Button */}
-      <Pressable onPress={togglePanel} style={{ padding: 8 }}>
+      <Pressable onPress={() => !isDragging && togglePanel()} style={{ padding: 8 }}>
         <Box
           width={40}
           height={40}
@@ -148,7 +212,7 @@ export const ThemeSwitcher: React.FC = () => {
           </Box>
         )}
       </AnimatePresence>
-    </Box>
+    </Animated.View>
   );
 };
 
