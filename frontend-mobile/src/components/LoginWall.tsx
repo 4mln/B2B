@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, Pressable, ScrollView, StatusBar, TextInput, PanResponder, Dimensions } from 'react-native';
+import { Animated, Pressable, ScrollView, StatusBar, TextInput, PanResponder, Dimensions, Easing } from 'react-native';
 import { AnimatePresence, Stack as Box, Button, XStack as HStack, Spinner, Text, YStack as VStack } from 'tamagui';
 import { create } from 'zustand';
 import LoginScreen from '../../app/auth/login';
@@ -35,25 +35,46 @@ export const ThemeSwitcher: React.FC = () => {
   const buttonTranslate2 = React.useRef(new Animated.Value(0)).current;
   
   // Floating animation
-  const floatAnim = React.useRef(new Animated.Value(0)).current;
+  const floatAnimY = React.useRef(new Animated.Value(0)).current;
+  const floatAnimX = React.useRef(new Animated.Value(0)).current;
   const floatingLoopRef = React.useRef<Animated.CompositeAnimation | null>(null);
 
   // Start/stop floating animation
   React.useEffect(() => {
     if (!isPanelVisible && !isDragging) {
-      // Start floating animation
+      // Start floating animation (20% faster: 2000ms -> 1600ms)
       floatingLoopRef.current = Animated.loop(
-        Animated.sequence([
-          Animated.timing(floatAnim, {
-            toValue: 1,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(floatAnim, {
-            toValue: 0,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
+        Animated.parallel([
+          // Vertical floating (up and down)
+          Animated.sequence([
+            Animated.timing(floatAnimY, {
+              toValue: 1,
+              duration: 1600,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(floatAnimY, {
+              toValue: 0,
+              duration: 1600,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+          ]),
+          // Horizontal floating (left and right)
+          Animated.sequence([
+            Animated.timing(floatAnimX, {
+              toValue: 1,
+              duration: 1600,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(floatAnimX, {
+              toValue: 0,
+              duration: 1600,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+          ]),
         ])
       );
       floatingLoopRef.current.start();
@@ -62,11 +83,20 @@ export const ThemeSwitcher: React.FC = () => {
       if (floatingLoopRef.current) {
         floatingLoopRef.current.stop();
       }
-      Animated.timing(floatAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      Animated.parallel([
+        Animated.timing(floatAnimY, {
+          toValue: 0,
+          duration: 300,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnimX, {
+          toValue: 0,
+          duration: 300,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
 
     return () => {
@@ -239,9 +269,14 @@ export const ThemeSwitcher: React.FC = () => {
     })
   ).current;
 
-  const floatingTranslate = floatAnim.interpolate({
+  const floatingTranslateY = floatAnimY.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -8],
+  });
+
+  const floatingTranslateX = floatAnimX.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 4],
   });
 
   return (
@@ -253,7 +288,8 @@ export const ThemeSwitcher: React.FC = () => {
         transform: [
           { translateX: pan.x },
           { translateY: pan.y },
-          { translateY: floatingTranslate },
+          { translateY: floatingTranslateY },
+          { translateX: floatingTranslateX },
         ],
         zIndex: 10000,
         pointerEvents: 'auto',
