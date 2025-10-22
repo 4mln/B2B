@@ -245,7 +245,7 @@ const configBase = {
 
   defaultProps: {
     Text: {
-      // Use Vazirmatn font for all text
+      // Use Vazirmatn font for Tamagui Text components (doesn't affect icon components)
       fontFamily: '$body',
     },
     Button: {

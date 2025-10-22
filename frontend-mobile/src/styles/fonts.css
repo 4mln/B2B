@@ -55,16 +55,28 @@
   font-display: swap;
 }
 
-/* Apply Vazirmatn as default font for all elements */
-* {
-  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif !important;
-}
-
+/* Apply Vazirmatn as default font for body/html */
 body, html {
-  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif !important;
+  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
 }
 
-/* Ensure all text elements use Vazirmatn */
-p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, select, label {
-  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif !important;
+/* Ensure text elements use Vazirmatn */
+p, h1, h2, h3, h4, h5, h6, input, textarea, select, label,
+span:not([class*="icon"]):not([data-icon]):not([class*="Icon"]),
+div:not([class*="icon"]):not([data-icon]):not([class*="Icon"]) {
+  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+}
+
+/* Explicitly preserve icon fonts - DO NOT apply Vazirmatn to these */
+i,
+[class*="Icon"],
+[class*="icon-"],
+[class*="material-"],
+.fa, .fas, .far, .fab, .fal, .fad,
+svg,
+[data-icon],
+/* Expo vector icons */
+span[class*="Expo"],
+span[class*="glyphicon"] {
+  font-family: inherit !important;
 }
