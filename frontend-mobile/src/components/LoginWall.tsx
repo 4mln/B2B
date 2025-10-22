@@ -38,46 +38,60 @@ export const ThemeSwitcher: React.FC = () => {
   const floatAnimY = React.useRef(new Animated.Value(0)).current;
   const floatAnimX = React.useRef(new Animated.Value(0)).current;
   const floatingLoopRef = React.useRef<Animated.CompositeAnimation | null>(null);
+  const [randomXTarget, setRandomXTarget] = React.useState(0);
 
   // Start/stop floating animation
   React.useEffect(() => {
     if (!isPanelVisible && !isDragging) {
-      // Start floating animation (20% faster: 2000ms -> 1600ms)
-      floatingLoopRef.current = Animated.loop(
-        Animated.parallel([
-          // Vertical floating (up and down)
-          Animated.sequence([
-            Animated.timing(floatAnimY, {
-              toValue: 1,
-              duration: 1600,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-            Animated.timing(floatAnimY, {
-              toValue: 0,
-              duration: 1600,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-          ]),
-          // Horizontal floating (left and right)
-          Animated.sequence([
-            Animated.timing(floatAnimX, {
-              toValue: 1,
-              duration: 1600,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-            Animated.timing(floatAnimX, {
-              toValue: 0,
-              duration: 1600,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-          ]),
+      // Function to create random horizontal animation
+      const createRandomXAnimation = () => {
+        const randomTarget = (Math.random() - 0.5) * 2; // Random value between -1 and 1
+        setRandomXTarget(randomTarget);
+        
+        return Animated.timing(floatAnimX, {
+          toValue: randomTarget,
+          duration: 1600,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        });
+      };
+
+      // Vertical floating loop
+      const verticalLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(floatAnimY, {
+            toValue: 1,
+            duration: 1600,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+          Animated.timing(floatAnimY, {
+            toValue: 0,
+            duration: 1600,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
         ])
       );
-      floatingLoopRef.current.start();
+
+      // Start vertical loop
+      verticalLoop.start();
+
+      // Horizontal animation with random direction changes
+      const animateHorizontal = () => {
+        createRandomXAnimation().start(({ finished }) => {
+          if (finished && !isPanelVisible && !isDragging) {
+            // Pick a new random target and continue
+            animateHorizontal();
+          }
+        });
+      };
+
+      // Start horizontal animation
+      animateHorizontal();
+
+      // Store reference to vertical loop for cleanup
+      floatingLoopRef.current = verticalLoop;
     } else {
       // Stop floating animation
       if (floatingLoopRef.current) {
@@ -140,7 +154,7 @@ export const ThemeSwitcher: React.FC = () => {
     setIsPanelVisible(willBeVisible);
     
     if (willBeVisible) {
-      // Slide out buttons
+      // Slide out buttons (closer together and closer to main button)
       const direction = isOnRight ? -1 : 1; // negative for left, positive for right
       Animated.parallel([
         Animated.spring(buttonScale1, {
@@ -157,13 +171,13 @@ export const ThemeSwitcher: React.FC = () => {
           delay: 50,
         }),
         Animated.spring(buttonTranslate1, {
-          toValue: direction * 60,
+          toValue: direction * 45,
           useNativeDriver: true,
           tension: 100,
           friction: 8,
         }),
         Animated.spring(buttonTranslate2, {
-          toValue: direction * 120,
+          toValue: direction * 80,
           useNativeDriver: true,
           tension: 100,
           friction: 8,
@@ -275,8 +289,8 @@ export const ThemeSwitcher: React.FC = () => {
   });
 
   const floatingTranslateX = floatAnimX.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 4],
+    inputRange: [-1, 1],
+    outputRange: [-4, 4],
   });
 
   return (
