@@ -54,3 +54,17 @@
   font-style: normal;
   font-display: swap;
 }
+
+/* Apply Vazirmatn as default font for all elements */
+* {
+  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif !important;
+}
+
+body, html {
+  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif !important;
+}
+
+/* Ensure all text elements use Vazirmatn */
+p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, select, label {
+  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif !important;
+}

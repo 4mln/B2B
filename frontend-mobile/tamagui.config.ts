@@ -53,50 +53,7 @@ const persianFont = createFont({
 // - Keys align with existing component usage (e.g., $primary500, $backgroundLight0, $textLight900)
 // - Expanded tokens for size/space/radius/zIndex
 
-const systemFont = createFont({
-  family: isWeb ? 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"' : 'System',
-  size: {
-    1: 12,
-    2: 14,
-    3: 16,
-    4: 18,
-    5: 20,
-    6: 24,
-    7: 28,
-  },
-  lineHeight: {
-    1: 18,
-    2: 20,
-    3: 24,
-    4: 28,
-    5: 28,
-    6: 32,
-    7: 36,
-  },
-  weight: {
-    1: '300',
-    2: '400',
-    3: '500',
-    4: '600',
-    5: '700',
-  },
-  letterSpacing: {
-    1: 0,
-    2: -0.25,
-    3: -0.25,
-    4: -0.5,
-    5: -0.5,
-    6: -0.5,
-    7: -0.75,
-  },
-  face: {
-    300: { normal: 'Inter-Light' },
-    400: { normal: 'Inter-Regular' },
-    500: { normal: 'Inter-Medium' },
-    600: { normal: 'Inter-SemiBold' },
-    700: { normal: 'Inter-Bold' },
-  },
-})
+// Removed systemFont - using persianFont (Vazirmatn) for all text
 
 // Tokens
 const size = {
@@ -226,6 +183,8 @@ const configBase = {
     heading: persianFont,
     body: persianFont,
     persian: persianFont,
+    // Use Vazirmatn as default for all components
+    true: persianFont,
   },
   tokens,
 
@@ -286,8 +245,8 @@ const configBase = {
 
   defaultProps: {
     Text: {
-      // Remove previous forced green, rely on theme color
-      // size can be adjusted per usage: size: 3,
+      // Use Vazirmatn font for all text
+      fontFamily: '$body',
     },
     Button: {
       borderRadius: '$3',

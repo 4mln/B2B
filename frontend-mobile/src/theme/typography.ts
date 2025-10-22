@@ -21,22 +21,22 @@ export const fontFamilies = {
     }),
   },
   
-  // English fonts (modern style)
+  // English fonts (using Vazirmatn for consistency)
   english: {
     regular: Platform.select({
-      ios: 'SF Pro Display',
-      android: 'Roboto',
-      web: 'Inter, system-ui, -apple-system, sans-serif',
+      ios: 'Vazirmatn-Regular',
+      android: 'Vazirmatn-Regular',
+      web: 'Vazirmatn, Tahoma, Arial, sans-serif',
     }),
     medium: Platform.select({
-      ios: 'SF Pro Display',
-      android: 'Roboto-Medium',
-      web: 'Inter-Medium, system-ui, -apple-system, sans-serif',
+      ios: 'Vazirmatn-Medium',
+      android: 'Vazirmatn-Medium',
+      web: 'Vazirmatn, Tahoma, Arial, sans-serif',
     }),
     bold: Platform.select({
-      ios: 'SF Pro Display',
-      android: 'Roboto-Bold',
-      web: 'Inter-Bold, system-ui, -apple-system, sans-serif',
+      ios: 'Vazirmatn-Bold',
+      android: 'Vazirmatn-Bold',
+      web: 'Vazirmatn, Tahoma, Arial, sans-serif',
     }),
   },
   

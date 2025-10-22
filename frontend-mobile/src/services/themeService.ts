@@ -515,10 +515,10 @@ class ThemeService {
         xxl: 48,
       },
       typography: {
-        fontFamily: 'System',
-        fontFamilyBold: 'System',
-        fontFamilyLight: 'System',
-        fontFamilyItalic: 'System',
+        fontFamily: 'Vazirmatn-Regular',
+        fontFamilyBold: 'Vazirmatn-Bold',
+        fontFamilyLight: 'Vazirmatn-Light',
+        fontFamilyItalic: 'Vazirmatn-Regular',
         fontSize: {
           xs: 12,
           sm: 14,
@@ -612,10 +612,10 @@ class ThemeService {
         xxl: 48,
       },
       typography: {
-        fontFamily: 'System',
-        fontFamilyBold: 'System',
-        fontFamilyLight: 'System',
-        fontFamilyItalic: 'System',
+        fontFamily: 'Vazirmatn-Regular',
+        fontFamilyBold: 'Vazirmatn-Bold',
+        fontFamilyLight: 'Vazirmatn-Light',
+        fontFamilyItalic: 'Vazirmatn-Regular',
         fontSize: {
           xs: 12,
           sm: 14,
