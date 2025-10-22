@@ -87,7 +87,7 @@ export default function RootLayout() {
 // Inner layout with access to theme context
 function InnerLayout() {
   const { isDark } = useThemeContext();
-  const { isAuthenticated, approved } = useAuth();
+  const { isLoading } = useAuth();
 
   return (
     <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
@@ -98,8 +98,8 @@ function InnerLayout() {
               <ConnectionBanner />
               <LoginWall />
               <BackgroundLock />
-              {/* Only show ThemeSwitcher when user is authenticated and approved */}
-              {isAuthenticated && approved && <ThemeSwitcher />}
+              {/* Show ThemeSwitcher after initial loading completes */}
+              {!isLoading && <ThemeSwitcher />}
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="index" />
                 <Stack.Screen name="(tabs)" />
