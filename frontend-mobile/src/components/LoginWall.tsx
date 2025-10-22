@@ -24,6 +24,14 @@ export const ThemeSwitcher: React.FC = () => {
   // Position state for dragging
   const pan = React.useRef(new Animated.ValueXY({ x: SCREEN_WIDTH - 80, y: 60 })).current;
   const [isDragging, setIsDragging] = React.useState(false);
+  const [isOnRight, setIsOnRight] = React.useState(true); // Track which side we're on
+  
+  // Scale animation for hover/touch effect
+  const scale = React.useRef(new Animated.Value(1)).current;
+  const buttonScale1 = React.useRef(new Animated.Value(0)).current;
+  const buttonScale2 = React.useRef(new Animated.Value(0)).current;
+  const buttonTranslate1 = React.useRef(new Animated.Value(0)).current;
+  const buttonTranslate2 = React.useRef(new Animated.Value(0)).current;
 
   const handleThemeChange = async (newTheme: 'light' | 'dark') => {
     try {
@@ -36,7 +44,78 @@ export const ThemeSwitcher: React.FC = () => {
   };
 
   const togglePanel = () => {
-    setIsPanelVisible(!isPanelVisible);
+    const willBeVisible = !isPanelVisible;
+    setIsPanelVisible(willBeVisible);
+    
+    if (willBeVisible) {
+      // Slide out buttons
+      const direction = isOnRight ? -1 : 1; // negative for left, positive for right
+      Animated.parallel([
+        Animated.spring(buttonScale1, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }),
+        Animated.spring(buttonScale2, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+          delay: 50,
+        }),
+        Animated.spring(buttonTranslate1, {
+          toValue: direction * 60,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }),
+        Animated.spring(buttonTranslate2, {
+          toValue: direction * 120,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+          delay: 50,
+        }),
+      ]).start();
+    } else {
+      // Slide in buttons
+      Animated.parallel([
+        Animated.spring(buttonScale1, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }),
+        Animated.spring(buttonScale2, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }),
+        Animated.spring(buttonTranslate1, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }),
+        Animated.spring(buttonTranslate2, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }),
+      ]).start();
+    }
+  };
+
+  const animateScale = (toValue: number) => {
+    Animated.spring(scale, {
+      toValue,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
   };
 
   // Pan responder for drag functionality
@@ -49,6 +128,7 @@ export const ThemeSwitcher: React.FC = () => {
       },
       onPanResponderGrant: () => {
         setIsDragging(true);
+        animateScale(1.2); // Zoom in when touched
         pan.setOffset({
           x: (pan.x as any)._value,
           y: (pan.y as any)._value,
@@ -60,6 +140,7 @@ export const ThemeSwitcher: React.FC = () => {
       ),
       onPanResponderRelease: (_, gestureState) => {
         pan.flattenOffset();
+        animateScale(1); // Zoom back to normal
         
         // Check if it was a tap (small movement)
         const isTap = Math.abs(gestureState.dx) < 5 && Math.abs(gestureState.dy) < 5;
@@ -73,19 +154,24 @@ export const ThemeSwitcher: React.FC = () => {
           }
         }, 0);
 
-        // Keep within screen bounds
+        // Get current position
         const currentX = (pan.x as any)._value;
         const currentY = (pan.y as any)._value;
         
-        const boundedX = Math.max(0, Math.min(SCREEN_WIDTH - 80, currentX));
-        const boundedY = Math.max(0, Math.min(SCREEN_HEIGHT - 80, currentY));
+        // Determine which corner to snap to based on x position
+        const isRight = currentX > SCREEN_WIDTH / 2;
+        setIsOnRight(isRight);
+        
+        // Snap to corner with smooth animation
+        const targetX = isRight ? SCREEN_WIDTH - 80 : 20;
+        const targetY = Math.max(20, Math.min(SCREEN_HEIGHT - 100, currentY));
 
-        if (currentX !== boundedX || currentY !== boundedY) {
-          Animated.spring(pan, {
-            toValue: { x: boundedX, y: boundedY },
-            useNativeDriver: false,
-          }).start();
-        }
+        Animated.spring(pan, {
+          toValue: { x: targetX, y: targetY },
+          useNativeDriver: false,
+          tension: 80,
+          friction: 10,
+        }).start();
       },
     })
   ).current;
@@ -105,113 +191,124 @@ export const ThemeSwitcher: React.FC = () => {
       }}
       {...panResponder.panHandlers}
     >
-      {/* Trigger Button */}
-      <Pressable onPress={() => !isDragging && togglePanel()} style={{ padding: 8 }}>
-        <Box
-          width={40}
-          height={40}
-          borderRadius="$full"
-          backgroundColor={isDark ? '$backgroundDark50' : '$backgroundLight100'}
-          borderWidth={1}
-          borderColor={isDark ? '$borderLight300' : '$borderLight200'}
-          alignItems="center"
-          justifyContent="center"
-          shadowColor="#000"
-          shadowOpacity={0.1}
-          shadowRadius={4}
+      <Animated.View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          transform: [{ scale }],
+        }}
+      >
+        {/* Light Theme Button - Slides out first */}
+        <Animated.View
+          style={{
+            position: 'absolute',
+            left: 8,
+            opacity: buttonScale1,
+            transform: [
+              { translateX: buttonTranslate1 },
+              { scale: buttonScale1 },
+            ],
+          }}
+          pointerEvents={isPanelVisible ? 'auto' : 'none'}
         >
-          <Ionicons
-            name={isDark ? 'sunny' : 'moon'}
-            size={20}
-            color={isDark ? '#fbbf24' : '#374151'}
-          />
-        </Box>
-      </Pressable>
-
-      {/* Sliding Panel */}
-      <AnimatePresence>
-        {isPanelVisible && (
-          <Box
-            position="absolute"
-            top={50}
-            right={0}
-            zIndex={10000}
-            animation="bouncy"
-            enterStyle={{
-              opacity: 0,
-              scale: 0.8,
-              y: 50
-            }}
-            exitStyle={{
-              opacity: 0,
-              scale: 0.8,
-              y: -100
-            }}
+          <Pressable
+            onPress={() => handleThemeChange('light')}
+            onPressIn={() => animateScale(1.1)}
+            onPressOut={() => animateScale(1)}
           >
             <Box
-              width={180}
-              backgroundColor={isDark ? '$backgroundDark0' : '$backgroundLight0'}
-              borderRadius="$md"
-              borderWidth={1}
-              borderColor={isDark ? '$borderLight300' : '$borderLight200'}
-              padding="$md"
+              width={44}
+              height={44}
+              borderRadius="$full"
+              backgroundColor={!isDark ? '$primary500' : isDark ? '$backgroundDark50' : '$backgroundLight100'}
+              borderWidth={2}
+              borderColor={!isDark ? '$primary600' : isDark ? '$borderLight300' : '$borderLight200'}
+              alignItems="center"
+              justifyContent="center"
               shadowColor="#000"
-              shadowOpacity={0.15}
-              shadowRadius={8}
+              shadowOpacity={0.2}
+              shadowRadius={6}
+              shadowOffset={{ width: 0, height: 2 }}
             >
-              <VStack space="$sm">
-                <Text fontSize="$sm" fontWeight="$medium" textAlign="center" color="$textLight600">
-                  Switch Theme
-                </Text>
-
-                <HStack space="$sm" justifyContent="center">
-                  <Pressable
-                    onPress={() => handleThemeChange('light')}
-                    style={{ flex: 1, alignItems: 'center', padding: 8 }}
-                  >
-                    <Box
-                      width={36}
-                      height={36}
-                      borderRadius="$full"
-                      backgroundColor={!isDark ? '$primary500' : '$backgroundLight100'}
-                      borderWidth={2}
-                      borderColor={!isDark ? '$primary500' : '$borderLight300'}
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Ionicons name="sunny" size={18} color={!isDark ? 'white' : '$textLight600'} />
-                    </Box>
-                    <Text fontSize="$xs" marginTop="$xs" color="$textLight600">
-                      Light
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={() => handleThemeChange('dark')}
-                    style={{ flex: 1, alignItems: 'center', padding: 8 }}
-                  >
-                    <Box
-                      width={36}
-                      height={36}
-                      borderRadius="$full"
-                      backgroundColor={isDark ? '$primary500' : '$backgroundLight100'}
-                      borderWidth={2}
-                      borderColor={isDark ? '$primary500' : '$borderLight300'}
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Ionicons name="moon" size={18} color={isDark ? 'white' : '$textLight600'} />
-                    </Box>
-                    <Text fontSize="$xs" marginTop="$xs" color="$textLight600">
-                      Dark
-                    </Text>
-                  </Pressable>
-                </HStack>
-              </VStack>
+              <Ionicons
+                name="sunny"
+                size={22}
+                color={!isDark ? '#ffffff' : '#fbbf24'}
+              />
             </Box>
+          </Pressable>
+        </Animated.View>
+
+        {/* Dark Theme Button - Slides out second */}
+        <Animated.View
+          style={{
+            position: 'absolute',
+            left: 8,
+            opacity: buttonScale2,
+            transform: [
+              { translateX: buttonTranslate2 },
+              { scale: buttonScale2 },
+            ],
+          }}
+          pointerEvents={isPanelVisible ? 'auto' : 'none'}
+        >
+          <Pressable
+            onPress={() => handleThemeChange('dark')}
+            onPressIn={() => animateScale(1.1)}
+            onPressOut={() => animateScale(1)}
+          >
+            <Box
+              width={44}
+              height={44}
+              borderRadius="$full"
+              backgroundColor={isDark ? '$primary500' : isDark ? '$backgroundDark50' : '$backgroundLight100'}
+              borderWidth={2}
+              borderColor={isDark ? '$primary600' : isDark ? '$borderLight300' : '$borderLight200'}
+              alignItems="center"
+              justifyContent="center"
+              shadowColor="#000"
+              shadowOpacity={0.2}
+              shadowRadius={6}
+              shadowOffset={{ width: 0, height: 2 }}
+            >
+              <Ionicons
+                name="moon"
+                size={22}
+                color={isDark ? '#ffffff' : '#4b5563'}
+              />
+            </Box>
+          </Pressable>
+        </Animated.View>
+
+        {/* Main Trigger Button */}
+        <Pressable
+          onPress={() => !isDragging && togglePanel()}
+          onPressIn={() => !isDragging && animateScale(1.15)}
+          onPressOut={() => !isDragging && animateScale(1)}
+          style={{ padding: 8 }}
+        >
+          <Box
+            width={44}
+            height={44}
+            borderRadius="$full"
+            backgroundColor={isDark ? '$backgroundDark50' : '$backgroundLight100'}
+            borderWidth={2}
+            borderColor={isDark ? '$borderLight300' : '$borderLight200'}
+            alignItems="center"
+            justifyContent="center"
+            shadowColor="#000"
+            shadowOpacity={0.15}
+            shadowRadius={8}
+            shadowOffset={{ width: 0, height: 3 }}
+          >
+            <Ionicons
+              name={isDark ? 'sunny' : 'moon'}
+              size={22}
+              color={isDark ? '#fbbf24' : '#374151'}
+            />
           </Box>
-        )}
-      </AnimatePresence>
+        </Pressable>
+      </Animated.View>
     </Animated.View>
   );
 };
