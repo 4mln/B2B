@@ -25,6 +25,7 @@ export const ThemeSwitcher: React.FC = () => {
   const pan = React.useRef(new Animated.ValueXY({ x: SCREEN_WIDTH - 80, y: 60 })).current;
   const [isDragging, setIsDragging] = React.useState(false);
   const [isOnRight, setIsOnRight] = React.useState(true); // Track which side we're on
+  const [screenDimensions, setScreenDimensions] = React.useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
   
   // Scale animation for hover/touch effect
   const scale = React.useRef(new Animated.Value(1)).current;
@@ -32,6 +33,67 @@ export const ThemeSwitcher: React.FC = () => {
   const buttonScale2 = React.useRef(new Animated.Value(0)).current;
   const buttonTranslate1 = React.useRef(new Animated.Value(0)).current;
   const buttonTranslate2 = React.useRef(new Animated.Value(0)).current;
+  
+  // Floating animation
+  const floatAnim = React.useRef(new Animated.Value(0)).current;
+  const floatingLoopRef = React.useRef<Animated.CompositeAnimation | null>(null);
+
+  // Start/stop floating animation
+  React.useEffect(() => {
+    if (!isPanelVisible && !isDragging) {
+      // Start floating animation
+      floatingLoopRef.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(floatAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(floatAnim, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      floatingLoopRef.current.start();
+    } else {
+      // Stop floating animation
+      if (floatingLoopRef.current) {
+        floatingLoopRef.current.stop();
+      }
+      Animated.timing(floatAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+
+    return () => {
+      if (floatingLoopRef.current) {
+        floatingLoopRef.current.stop();
+      }
+    };
+  }, [isPanelVisible, isDragging]);
+
+  // Handle window resize
+  React.useEffect(() => {
+    const handleResize = () => {
+      const newDimensions = Dimensions.get('window');
+      setScreenDimensions(newDimensions);
+      
+      // Update isOnRight based on current position
+      const currentX = (pan.x as any)._value;
+      const isRight = currentX > newDimensions.width / 2;
+      setIsOnRight(isRight);
+    };
+
+    const subscription = Dimensions.addEventListener('change', handleResize);
+    
+    return () => {
+      subscription?.remove();
+    };
+  }, []);
 
   const handleThemeChange = async (newTheme: 'light' | 'dark') => {
     try {
@@ -154,17 +216,18 @@ export const ThemeSwitcher: React.FC = () => {
           }
         }, 0);
 
-        // Get current position
+        // Get current position and screen dimensions
         const currentX = (pan.x as any)._value;
         const currentY = (pan.y as any)._value;
+        const { width, height } = Dimensions.get('window');
         
         // Determine which corner to snap to based on x position
-        const isRight = currentX > SCREEN_WIDTH / 2;
+        const isRight = currentX > width / 2;
         setIsOnRight(isRight);
         
         // Snap to corner with smooth animation
-        const targetX = isRight ? SCREEN_WIDTH - 80 : 20;
-        const targetY = Math.max(20, Math.min(SCREEN_HEIGHT - 100, currentY));
+        const targetX = isRight ? width - 80 : 20;
+        const targetY = Math.max(20, Math.min(height - 100, currentY));
 
         Animated.spring(pan, {
           toValue: { x: targetX, y: targetY },
@@ -176,6 +239,11 @@ export const ThemeSwitcher: React.FC = () => {
     })
   ).current;
 
+  const floatingTranslate = floatAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -8],
+  });
+
   return (
     <Animated.View
       style={{
@@ -185,6 +253,7 @@ export const ThemeSwitcher: React.FC = () => {
         transform: [
           { translateX: pan.x },
           { translateY: pan.y },
+          { translateY: floatingTranslate },
         ],
         zIndex: 10000,
         pointerEvents: 'auto',
@@ -198,7 +267,7 @@ export const ThemeSwitcher: React.FC = () => {
           transform: [{ scale }],
         }}
       >
-        {/* Light Theme Button - Slides out first */}
+        {/* Light Theme Button - Slides out first (30% smaller) */}
         <Animated.View
           style={{
             position: 'absolute',
@@ -215,10 +284,12 @@ export const ThemeSwitcher: React.FC = () => {
             onPress={() => handleThemeChange('light')}
             onPressIn={() => animateScale(1.1)}
             onPressOut={() => animateScale(1)}
+            onHoverIn={() => animateScale(1.1)}
+            onHoverOut={() => animateScale(1)}
           >
             <Box
-              width={44}
-              height={44}
+              width={31}
+              height={31}
               borderRadius="$full"
               backgroundColor={!isDark ? '$primary500' : isDark ? '$backgroundDark50' : '$backgroundLight100'}
               borderWidth={2}
@@ -232,14 +303,14 @@ export const ThemeSwitcher: React.FC = () => {
             >
               <Ionicons
                 name="sunny"
-                size={22}
+                size={16}
                 color={!isDark ? '#ffffff' : '#fbbf24'}
               />
             </Box>
           </Pressable>
         </Animated.View>
 
-        {/* Dark Theme Button - Slides out second */}
+        {/* Dark Theme Button - Slides out second (30% smaller) */}
         <Animated.View
           style={{
             position: 'absolute',
@@ -256,10 +327,12 @@ export const ThemeSwitcher: React.FC = () => {
             onPress={() => handleThemeChange('dark')}
             onPressIn={() => animateScale(1.1)}
             onPressOut={() => animateScale(1)}
+            onHoverIn={() => animateScale(1.1)}
+            onHoverOut={() => animateScale(1)}
           >
             <Box
-              width={44}
-              height={44}
+              width={31}
+              height={31}
               borderRadius="$full"
               backgroundColor={isDark ? '$primary500' : isDark ? '$backgroundDark50' : '$backgroundLight100'}
               borderWidth={2}
@@ -273,23 +346,25 @@ export const ThemeSwitcher: React.FC = () => {
             >
               <Ionicons
                 name="moon"
-                size={22}
+                size={16}
                 color={isDark ? '#ffffff' : '#4b5563'}
               />
             </Box>
           </Pressable>
         </Animated.View>
 
-        {/* Main Trigger Button */}
+        {/* Main Trigger Button (10% smaller) */}
         <Pressable
           onPress={() => !isDragging && togglePanel()}
           onPressIn={() => !isDragging && animateScale(1.15)}
           onPressOut={() => !isDragging && animateScale(1)}
+          onHoverIn={() => !isDragging && animateScale(1.15)}
+          onHoverOut={() => !isDragging && animateScale(1)}
           style={{ padding: 8 }}
         >
           <Box
-            width={44}
-            height={44}
+            width={40}
+            height={40}
             borderRadius="$full"
             backgroundColor={isDark ? '$backgroundDark50' : '$backgroundLight100'}
             borderWidth={2}
@@ -303,7 +378,7 @@ export const ThemeSwitcher: React.FC = () => {
           >
             <Ionicons
               name={isDark ? 'sunny' : 'moon'}
-              size={22}
+              size={20}
               color={isDark ? '#fbbf24' : '#374151'}
             />
           </Box>
