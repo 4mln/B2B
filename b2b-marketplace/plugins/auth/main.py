@@ -104,14 +104,50 @@ async def verify_otp(otp: str, current_user: User = Depends(get_current_user), d
 
 @router.post("/upload-document")
 async def upload_document(file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: AsyncSession = Depends(lambda: __import__("importlib").import_module("app.db.session").get_session)):
+    """
+    Upload KYC document (secure implementation)
+    """
     if current_user.kyc_status != "otp_verified":
         raise HTTPException(status_code=400, detail="Complete OTP verification first")
-    path = f"documents/{current_user.id}_{file.filename}"
-    with open(path, "wb") as buffer:
-        buffer.write(await file.read())
-    await db.execute(update(User).where(User.id == current_user.id).values(id_document=path, kyc_status="verified"))
+    
+    # Security: Validate file upload
+    from app.core.file_security import validate_document_upload, generate_secure_filename, validate_upload_path
+    
+    # Validate file (max 10MB for documents)
+    safe_filename, mime_type, file_size = await validate_document_upload(file, max_size=10 * 1024 * 1024)
+    
+    # Generate secure filename
+    secure_filename = generate_secure_filename(safe_filename, current_user.id, prefix="kyc_doc")
+    
+    # Create upload directory if it doesn't exist
+    upload_dir = os.path.abspath("uploads/documents")
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # Validate path to prevent traversal
+    file_path = os.path.join(upload_dir, secure_filename)
+    file_path = validate_upload_path(file_path, [upload_dir])
+    
+    # Save file securely
+    try:
+        with open(file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+    
+    # Update user record
+    await db.execute(update(User).where(User.id == current_user.id).values(
+        id_document=file_path,
+        kyc_status="verified"
+    ))
     await db.commit()
-    return {"message": "Document uploaded and KYC completed"}
+    
+    return {
+        "message": "Document uploaded and KYC completed",
+        "filename": secure_filename,
+        "size": file_size,
+        "type": mime_type
+    }
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(refresh_token: str, db: AsyncSession = Depends(lambda: __import__("importlib").import_module("app.db.session").get_session)):

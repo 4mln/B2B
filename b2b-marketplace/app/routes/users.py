@@ -129,28 +129,53 @@ async def upload_profile_picture(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Upload profile picture"""
+    """
+    Upload profile picture (secure implementation)
+    Maximum file size: 5MB
+    Supported formats: JPEG, PNG, GIF, WebP
+    """
+    # Security: Validate image upload
+    from app.core.file_security import validate_image_upload, generate_secure_filename, validate_upload_path
     
-    if not file.content_type.startswith('image/'):
-        raise HTTPException(status_code=400, detail="File must be an image")
+    # Validate file (max 5MB for images)
+    safe_filename, mime_type, file_size = await validate_image_upload(file, max_size=5 * 1024 * 1024)
     
-    # Create uploads directory if it doesn't exist
-    upload_dir = "uploads/profile_pictures"
+    # Generate secure filename
+    secure_filename = generate_secure_filename(safe_filename, current_user.id, prefix="profile")
+    
+    # Create upload directory if it doesn't exist
+    upload_dir = os.path.abspath("uploads/profile_pictures")
     os.makedirs(upload_dir, exist_ok=True)
     
-    # Generate unique filename
-    file_extension = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
-    filename = f"profile_{current_user.unique_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{file_extension}"
-    file_path = os.path.join(upload_dir, filename)
+    # Validate path to prevent traversal
+    file_path = os.path.join(upload_dir, secure_filename)
+    file_path = validate_upload_path(file_path, [upload_dir])
     
-    # Save file
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # Try S3 upload first
+    from app.storage.s3 import upload_fileobj_to_s3
+    s3_bucket = os.getenv("S3_BUCKET")
+    s3_key = f"profile_pictures/{current_user.id}/{secure_filename}"
+    
+    file_url = None
+    if s3_bucket:
+        await file.seek(0)
+        file_url = upload_fileobj_to_s3(file.file, s3_bucket, s3_key, mime_type)
+    
+    # Fallback to local storage if S3 fails or not configured
+    if not file_url:
+        try:
+            with open(file_path, "wb") as buffer:
+                await file.seek(0)
+                content = await file.read()
+                buffer.write(content)
+            file_url = file_path
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
     
     # Update user profile
     await db.execute(
         update(User).where(User.id == current_user.id).values(
-            profile_picture=file_path,
+            profile_picture=file_url,
             updated_at=datetime.utcnow()
         )
     )
@@ -159,7 +184,12 @@ async def upload_profile_picture(
     return UserResponse(
         success=True,
         message="Profile picture uploaded successfully",
-        data={"file_path": file_path}
+        data={
+            "file_path": file_url,
+            "filename": secure_filename,
+            "size": file_size,
+            "type": mime_type
+        }
     )
 
 # -----------------------------
