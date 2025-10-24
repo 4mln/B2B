@@ -13,8 +13,9 @@ export const API_CONFIG = {
   // API Version
   VERSION: 'v1',
   
-  // Timeout settings
-  TIMEOUT: 5000,
+  // Timeout settings (increased for production)
+  TIMEOUT: 15000,  // 15 seconds for regular API calls
+  HEALTH_CHECK_TIMEOUT: 8000,  // 8 seconds for health checks
   
   // Retry settings
   MAX_RETRIES: 3,

@@ -165,16 +165,27 @@ trusted = []
 if settings.TRUSTED_ORIGINS:
     trusted = [o.strip() for o in settings.TRUSTED_ORIGINS.split(',') if o.strip()]
 elif settings.DEBUG:
-    trusted = ["http://localhost:8000", "http://127.0.0.1:8000", "http://localhost:19006"]
+    # Development: Allow local origins
+    trusted = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:19006",
+        "http://localhost:19000",  # Expo default
+        "http://localhost:3000",   # Common frontend port
+        "http://192.168.*",        # Local network (for mobile testing)
+    ]
 else:
     trusted = ["https://yourdomain.com"]
 
+# Add CORS middleware with proper configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=trusted,
+    allow_origins=trusted if not settings.DEBUG else ["*"],  # Allow all in debug for easier development
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 # Import engine from session to avoid duplication
@@ -216,17 +227,65 @@ setup_middleware(app, redis)  # Rate limiting
 global api_key_manager
 api_key_manager = setup_api_key_management(app, redis)
 
-# Health check endpoint
+# Health check endpoint - No authentication required
 @app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "app_name": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "environment": settings.ENVIRONMENT,
-        "debug": settings.DEBUG
-    }
+@app.get("/api/v1/health")  # Also available under API prefix for consistency
+async def health_check(request: Request):
+    """
+    Production-grade health check endpoint
+    Returns detailed status of system components
+    """
+    try:
+        # Test database connection
+        db_healthy = False
+        try:
+            async with engine.connect() as conn:
+                await conn.execute("SELECT 1")
+                db_healthy = True
+        except Exception as e:
+            print(f"Database health check failed: {e}")
+        
+        # Test Redis connection
+        redis_healthy = False
+        try:
+            if hasattr(redis, 'ping'):
+                await redis.ping()
+                redis_healthy = True
+            else:
+                # Fake redis for tests
+                redis_healthy = True
+        except Exception as e:
+            print(f"Redis health check failed: {e}")
+        
+        # Determine overall status
+        overall_healthy = db_healthy  # Redis is optional
+        status_code = 200 if overall_healthy else 503
+        
+        return JSONResponse(
+            status_code=status_code,
+            content={
+                "status": "healthy" if overall_healthy else "degraded",
+                "app_name": settings.APP_NAME,
+                "version": settings.APP_VERSION,
+                "environment": settings.ENVIRONMENT,
+                "debug": settings.DEBUG,
+                "components": {
+                    "database": "healthy" if db_healthy else "unhealthy",
+                    "redis": "healthy" if redis_healthy else "unhealthy",
+                },
+                "timestamp": __import__('datetime').datetime.utcnow().isoformat() + "Z"
+            }
+        )
+    except Exception as e:
+        print(f"Health check error: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy",
+                "error": str(e),
+                "timestamp": __import__('datetime').datetime.utcnow().isoformat() + "Z"
+            }
+        )
 # Engine and Redis variables are defined here for use in the lifespan context manager
 
 

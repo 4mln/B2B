@@ -12,6 +12,7 @@ import { initializeFeatureFlags } from '@/services/featureFlags';
 import { initializeOfflineService } from '@/services/offlineService';
 import { initializeThemeService, getCurrentTheme, subscribeToTheme } from '@/services/themeService';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import config from './tamagui.config';
 
 /**
@@ -145,12 +146,21 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <TamaguiProvider config={config} defaultTheme={currentTheme}>
-        <QueryClientProvider client={queryClient}>
-          <AppContent currentTheme={currentTheme} />
-        </QueryClientProvider>
-      </TamaguiProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary onError={(error, errorInfo) => {
+      // Log to error tracking service in production
+      console.error('[App] Unhandled Error:', error, errorInfo);
+      // TODO: Send to Sentry or similar service
+      // if (!__DEV__) {
+      //   Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
+      // }
+    }}>
+      <SafeAreaProvider>
+        <TamaguiProvider config={config} defaultTheme={currentTheme}>
+          <QueryClientProvider client={queryClient}>
+            <AppContent currentTheme={currentTheme} />
+          </QueryClientProvider>
+        </TamaguiProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

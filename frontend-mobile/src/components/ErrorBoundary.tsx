@@ -1,74 +1,107 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { withTranslation, WithTranslation } from 'react-i18next';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { colors } from '@/theme/colors';
 import { semanticSpacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 
-interface Props extends WithTranslation {
+interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
-  error?: Error;
-  errorInfo?: ErrorInfo;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
 }
 
-class ErrorBoundaryBase extends Component<Props, State> {
+/**
+ * Production-grade Error Boundary Component
+ * Catches JavaScript errors anywhere in the child component tree
+ */
+export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    // Update state so the next render will show the fallback UI
+    return {
+      hasError: true,
+      error,
+      errorInfo: null,
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    this.setState({ error, errorInfo });
+    // Log error to error reporting service
+    console.error('Error Boundary caught an error:', error, errorInfo);
+    
+    // Call custom error handler if provided
+    this.props.onError?.(error, errorInfo);
+    
+    // Update state with error info
+    this.setState({
+      error,
+      errorInfo,
+    });
+
+    // TODO: Send to error tracking service (e.g., Sentry)
+    if (!__DEV__) {
+      // In production, send to error tracking
+      // Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
+    }
   }
 
-  handleRetry = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+  handleReset = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    });
   };
 
   render() {
     if (this.state.hasError) {
+      // Custom fallback UI
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
-      const { t } = this.props;
+      // Default error UI
       return (
         <View style={styles.container}>
           <View style={styles.content}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="warning-outline" size={64} color={colors.error[500]} />
-            </View>
-            
-            <Text style={styles.title}>{t('errors.somethingWrong', 'Something went wrong')}</Text>
+            <Text style={styles.title}>Oops! Something went wrong</Text>
             <Text style={styles.message}>
-              {t('errors.somethingUnexpected', "We're sorry, but something unexpected happened. Please try again.")}
+              We're sorry, but something unexpected happened. Please try again.
             </Text>
-            
+
             {__DEV__ && this.state.error && (
-              <View style={styles.errorDetails}>
-                <Text style={styles.errorTitle}>{t('errors.detailsDev', 'Error Details (Development):')}</Text>
-                <Text style={styles.errorText}>{this.state.error.message}</Text>
+              <ScrollView style={styles.errorDetails}>
+                <Text style={styles.errorTitle}>Error Details (Dev Only):</Text>
+                <Text style={styles.errorText}>
+                  {this.state.error.toString()}
+                </Text>
                 {this.state.errorInfo && (
-                  <Text style={styles.errorText}>
+                  <Text style={styles.errorStack}>
                     {this.state.errorInfo.componentStack}
                   </Text>
                 )}
-              </View>
+              </ScrollView>
             )}
-            
-            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
-              <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={this.handleReset}
+            >
+              <Text style={styles.buttonText}>Try Again</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -79,65 +112,85 @@ class ErrorBoundaryBase extends Component<Props, State> {
   }
 }
 
-export const ErrorBoundary = withTranslation()(ErrorBoundaryBase);
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.light,
+    backgroundColor: colors.background.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: semanticSpacing.lg,
+    padding: semanticSpacing.lg,
   },
   content: {
-    alignItems: 'center',
     maxWidth: 400,
-  },
-  iconContainer: {
-    marginBottom: semanticSpacing.lg,
+    width: '100%',
+    alignItems: 'center',
   },
   title: {
     fontSize: typography.h3.fontSize,
-    fontWeight: typography.h3.fontWeight,
-    color: colors.text.primary,
-    textAlign: 'center',
+    fontWeight: typography.h3.fontWeight as any,
+    color: colors.error[600],
     marginBottom: semanticSpacing.md,
+    textAlign: 'center',
   },
   message: {
     fontSize: typography.body.fontSize,
     color: colors.text.secondary,
     textAlign: 'center',
-    lineHeight: typography.body.fontSize * (typography.lineHeights?.normal || 1.5),
-    marginBottom: semanticSpacing.xl,
+    marginBottom: semanticSpacing.lg,
+    lineHeight: 24,
   },
   errorDetails: {
     backgroundColor: colors.gray[100],
     padding: semanticSpacing.md,
     borderRadius: semanticSpacing.radius.md,
     marginBottom: semanticSpacing.lg,
+    maxHeight: 300,
     width: '100%',
   },
   errorTitle: {
-    fontSize: typography.bodySmall.fontSize,
-    fontWeight: typography.fontWeights?.semibold || '600',
-    color: colors.text.primary,
-    marginBottom: semanticSpacing.sm,
+    fontSize: typography.caption.fontSize,
+    fontWeight: '700',
+    color: colors.error[700],
+    marginBottom: semanticSpacing.xs,
   },
   errorText: {
     fontSize: typography.caption.fontSize,
-    color: colors.text.secondary,
+    color: colors.error[600],
     fontFamily: 'monospace',
-    marginBottom: semanticSpacing.xs,
+    marginBottom: semanticSpacing.sm,
   },
-  retryButton: {
-    backgroundColor: colors.primary[500],
-    paddingHorizontal: semanticSpacing.xl,
-    paddingVertical: semanticSpacing.md,
-    borderRadius: semanticSpacing.radius.lg,
+  errorStack: {
+    fontSize: 10,
+    color: colors.gray[600],
+    fontFamily: 'monospace',
   },
-  retryButtonText: {
-    fontSize: typography.button.fontSize,
-    fontWeight: typography.button.fontWeight,
-    color: colors.background.light,
+  button: {
+    backgroundColor: colors.primary[600],
+    paddingVertical: semanticSpacing.sm,
+    paddingHorizontal: semanticSpacing.lg,
+    borderRadius: semanticSpacing.radius.md,
+    minWidth: 120,
+  },
+  buttonText: {
+    color: colors.text.inverse,
+    fontSize: typography.body.fontSize,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
+
+/**
+ * Higher-order component to wrap a component with an error boundary
+ */
+export function withErrorBoundary<P extends object>(
+  Component: React.ComponentType<P>,
+  fallback?: ReactNode
+) {
+  return (props: P) => (
+    <ErrorBoundary fallback={fallback}>
+      <Component {...props} />
+    </ErrorBoundary>
+  );
+}
+
+export default ErrorBoundary;
