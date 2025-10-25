@@ -11,10 +11,11 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/marketplace
       - ENVIRONMENT=development
+      - DEBUG=true
       # Optionally set SECRET_KEY for non-development runs. Keep blank for local development.
       # - SECRET_KEY=your-very-secret-key-with-32+chars
     volumes:
-      - .:/code
+      - .:/opt/app
       - backups:/backups
     ports:
       - "8000:8000"

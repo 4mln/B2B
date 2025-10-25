@@ -18,6 +18,7 @@ import * as yup from 'yup';
 
 import { showInfoMessage, useMessageBoxStore } from '@/context/messageBoxStore';
 import i18n from '@/i18n';
+import { authService } from '@/services/auth';
 import { colors } from '@/theme/colors';
 import { ensureOnlineOrMessage } from '@/utils/connection';
 
@@ -112,7 +113,45 @@ const LoginScreen = forwardRef<LoginScreenRef, LoginScreenProps>((props, ref) =>
       const online = await ensureOnlineOrMessage();
       if (!online) return;
 
-      // Call backend to send OTP (signin mode) - backend will check user existence
+      // Check if user exists before sending OTP
+      const userExistsResp = await authService.userExists(phone.trim());
+      
+      if (!userExistsResp.success) {
+        const networkMsg = i18n.t('errors.networkErrorDetailed');
+        useMessageBoxStore.getState().show({
+          type: 'error',
+          title: i18n.t('auth.error', 'Error'),
+          message: i18n.t('auth.checkUserFailed', 'Failed to check user existence. Please try again.'),
+          actions: [{ label: i18n.t('common.back') }]
+        });
+        return;
+      }
+
+      if (!userExistsResp.data?.exists) {
+        // User doesn't exist, offer to signup
+        showInfoMessage(
+          i18n.t('auth.userNotFoundProceedSignup', 'User not found. Would you like to create an account?'),
+          [
+            {
+              label: i18n.t('auth.signup', 'Signup'),
+              onPress: () => {
+                if (props?.onNavigateToSignup) {
+                  props.onNavigateToSignup(phone.trim());
+                } else {
+                  router.replace({ pathname: '/auth/signup', params: { phone: phone.trim() } });
+                }
+              },
+            },
+            {
+              label: i18n.t('common.cancel', 'Cancel'),
+              onPress: () => {},
+            },
+          ]
+        );
+        return;
+      }
+
+      // User exists, proceed with OTP
       const resp = await sendOTPMutation.mutateAsync({ phone: phone.trim(), is_signup: false } as any);
       if (resp?.success) {
         if (props?.onOtpRequested) {
@@ -121,37 +160,14 @@ const LoginScreen = forwardRef<LoginScreenRef, LoginScreenProps>((props, ref) =>
           router.push({ pathname: '/auth/verify-otp', params: { phone: phone.trim(), from: 'login' } });
         }
       } else {
-        // Check if it's a "user not found" error
-        if ((resp?.error || '').toLowerCase().includes('not found')) {
-          showInfoMessage(
-            i18n.t('auth.userNotFoundProceedSignup', 'User not found, proceed to signup.'),
-            [
-              {
-                label: i18n.t('auth.signup', 'Signup'),
-                onPress: () => {
-                  if (props?.onNavigateToSignup) {
-                    props.onNavigateToSignup(phone.trim());
-                  } else {
-                    router.replace({ pathname: '/auth/signup', params: { phone: phone.trim() } });
-                  }
-                },
-              },
-              {
-                label: i18n.t('common.cancel', 'Cancel'),
-                onPress: () => {},
-              },
-            ]
-          );
-        } else {
-          const networkMsg = i18n.t('errors.networkErrorDetailed');
-          const msg = resp?.error || networkMsg;
-          useMessageBoxStore.getState().show({
-            type: 'error',
-            title: i18n.t('auth.error', 'Error'),
-            message: msg,
-            actions: [{ label: i18n.t('common.back') }]
-          });
-        }
+        const networkMsg = i18n.t('errors.networkErrorDetailed');
+        const msg = resp?.error || networkMsg;
+        useMessageBoxStore.getState().show({
+          type: 'error',
+          title: i18n.t('auth.error', 'Error'),
+          message: msg,
+          actions: [{ label: i18n.t('common.back') }]
+        });
       }
     } catch (error) {
       Alert.alert(t('login.alerts.sendFailedTitle'), t('login.alerts.sendFailed'));

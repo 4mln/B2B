@@ -19,7 +19,21 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next):
         # Skip API key check for non-API routes, authentication endpoints, and development mode
-        if not request.url.path.startswith("/api/") or request.url.path.startswith("/api/auth") or request.url.path.startswith("/api/docs") or request.url.path.startswith("/api/redoc"):
+        
+        if (
+            request.method == "OPTIONS"  # CORS preflight
+            or not request.url.path.startswith("/api/") 
+            or request.url.path.startswith("/api/v1/auth")
+            or request.url.path.startswith("/api/auth") 
+            or request.url.path.startswith("/auth")  # Direct auth routes (without /api prefix)
+            or request.url.path.startswith("/users")  # User management routes
+            or request.url.path.startswith("/refresh")  # Token refresh routes
+            or request.url.path.startswith("/me")  # User session routes
+            or request.url.path.startswith("/wallet")  # Wallet routes
+            or request.url.path.startswith("/api/docs") 
+            or request.url.path.startswith("/api/redoc")
+            or request.url.path.startswith("/health")
+            ):
             return await call_next(request)
         
         # For development/testing purposes - bypass API key check

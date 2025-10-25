@@ -140,7 +140,7 @@ def resolve_user_id(user):
             return user.id, None
     return None, None
 
-from .schemas import (
+from .schemas import MobileDeviceCreate, MobileDeviceOut, MobileNotificationSettings
 
 def resolve_user_id(user):
     """Resolve user ID for both legacy and new user models"""

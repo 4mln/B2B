@@ -9,8 +9,8 @@ RUN python -m pip install --upgrade pip \
 ## Runtime: minimal image, non-root user
 FROM python:3.11-slim as runtime
 ENV PYTHONUNBUFFERED=1
-ENV ENVIRONMENT=production
-ENV DEBUG=False
+ENV ENVIRONMENT=development
+ENV DEBUG=True
 ENV PYTHONPATH=/opt/app
 
 RUN adduser --disabled-password --gecos '' appuser || true

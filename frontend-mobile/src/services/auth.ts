@@ -140,13 +140,16 @@ export const authService = {
 
   /**
    * Check if a user exists by phone number
-   * Note: Backend OTP flow automatically creates users, so this always returns true
-   * This method is kept for compatibility but doesn't make actual API calls
    */
   async userExists(phone: string): Promise<ApiResponse<{ exists: boolean }>> {
     try {
       const response = await apiClient.get(`/auth/exists`, { params: { phone } });
-      return { data: response.data, success: true };
+      // Backend returns {exists: boolean, phone_exists: boolean, national_id_exists: boolean}
+      // We need to map it to {exists: boolean} for frontend compatibility
+      return { 
+        data: { exists: response.data.exists || false }, 
+        success: true 
+      };
     } catch (error: any) {
       return { data: { exists: false }, error: 'Failed to check user', success: false };
     }
