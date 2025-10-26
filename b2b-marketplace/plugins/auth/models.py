@@ -10,7 +10,7 @@ class AuthToken(Base):
     __tablename__ = "auth_tokens"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     token = Column(String, nullable=False, index=True)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     is_revoked = Column(Boolean, default=False)
@@ -25,10 +25,20 @@ class UserSession(Base):
     __tablename__ = "user_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
+    device_id = Column(String(255), nullable=True, index=True)  # Reference to device
+    session_token = Column(String(255), nullable=True, index=True)  # Optional session token
     user_agent = Column(String, nullable=True)
     ip_address = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_activity = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    
+    # Session metadata
+    login_method = Column(String(50), nullable=True)  # otp, password, social
+    login_provider = Column(String(50), nullable=True)  # google, facebook, etc.
+    session_metadata = Column(String, nullable=True)  # JSON string for metadata
 
     user = relationship("User")
 
@@ -37,8 +47,8 @@ class UserProfileChange(Base):
     __tablename__ = "user_profile_changes"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    changed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
+    changed_by = Column(Integer, ForeignKey("users_new.id"), nullable=True)
     field_name = Column(String, nullable=False)
     old_value = Column(String, nullable=True)
     new_value = Column(String, nullable=True)

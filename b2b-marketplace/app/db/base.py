@@ -8,6 +8,10 @@ import plugins  # your plugins package
 # Base class for models (needed for Alembic autogenerate)
 Base = declarative_base()
 
+# Import core models
+from app.models.user import User
+from app.models.device import Device, OTPCode
+
 # Exclude legacy plugins after migration
 excluded_plugins = {"seller", "buyer"}
 

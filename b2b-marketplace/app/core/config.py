@@ -17,10 +17,27 @@ class Settings(BaseSettings):
     # SECRET_KEY must be provided for any non-development environment
     SECRET_KEY: str | None = None
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # Reduced for security
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30    # Increased for better UX
     # In production you may want to require Redis for refresh token revocation
     REQUIRE_REFRESH_REDIS: bool = False
+    
+    # OTP Configuration
+    BYPASS_OTP: bool = False  # Development bypass flag
+    OTP_EXPIRE_MINUTES: int = 5
+    MAX_OTP_ATTEMPTS: int = 3
+    MAX_OTP_REQUESTS_PER_HOUR: int = 5
+    
+    # SMS Provider Configuration
+    SMS_PROVIDER: str = "console"  # console, twilio, kavenegar, aws_sns
+    KAVENEGAR_API_KEY: str | None = None
+    KAVENEGAR_OTP_TEMPLATE: str = "otp"
+    TWILIO_ACCOUNT_SID: str | None = None
+    TWILIO_AUTH_TOKEN: str | None = None
+    TWILIO_PHONE_NUMBER: str | None = None
+    AWS_REGION: str = "us-east-1"
+    AWS_ACCESS_KEY_ID: str | None = None
+    AWS_SECRET_ACCESS_KEY: str | None = None
     
     # Rate limiting
     RATE_LIMIT_WINDOW_SECONDS: int = 60
@@ -64,6 +81,28 @@ class Settings(BaseSettings):
         # Trusted origins (comma separated)
         if os.getenv("TRUSTED_ORIGINS"):
             self.TRUSTED_ORIGINS = os.getenv("TRUSTED_ORIGINS")
+        
+        # OTP and SMS configuration
+        if os.getenv("BYPASS_OTP"):
+            self.BYPASS_OTP = os.getenv("BYPASS_OTP").lower() in ("true", "1", "yes")
+        if os.getenv("SMS_PROVIDER"):
+            self.SMS_PROVIDER = os.getenv("SMS_PROVIDER")
+        if os.getenv("KAVENEGAR_API_KEY"):
+            self.KAVENEGAR_API_KEY = os.getenv("KAVENEGAR_API_KEY")
+        if os.getenv("KAVENEGAR_OTP_TEMPLATE"):
+            self.KAVENEGAR_OTP_TEMPLATE = os.getenv("KAVENEGAR_OTP_TEMPLATE")
+        if os.getenv("TWILIO_ACCOUNT_SID"):
+            self.TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+        if os.getenv("TWILIO_AUTH_TOKEN"):
+            self.TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+        if os.getenv("TWILIO_PHONE_NUMBER"):
+            self.TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
+        if os.getenv("AWS_REGION"):
+            self.AWS_REGION = os.getenv("AWS_REGION")
+        if os.getenv("AWS_ACCESS_KEY_ID"):
+            self.AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+        if os.getenv("AWS_SECRET_ACCESS_KEY"):
+            self.AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
         
         # Set environment-specific defaults
         if self.ENVIRONMENT == "production":

@@ -5,7 +5,7 @@ from sqlalchemy import (
     Column, String, Integer, Boolean, DateTime, JSON, CheckConstraint, func
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, BIGINT
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 from app.db.base import Base
 
 def generate_unique_id():
@@ -64,6 +64,10 @@ class User(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships - using string references to avoid circular imports
+    devices = relationship("Device", back_populates="user", cascade="all, delete-orphan")
+    sessions = relationship("UserSession", cascade="all, delete-orphan")
 
     __table_args__ = (
         CheckConstraint("rating >= 0 AND rating <= 5", name="chk_user_rating_range"),

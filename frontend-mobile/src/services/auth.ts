@@ -1,19 +1,27 @@
 import apiClient from './api';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
+import { v4 as uuidv4 } from 'react-native-uuid';
 
 // Types
 export interface LoginRequest {
   phone: string;
-  is_signup?: boolean;
+  device_id: string;
 }
 
 export interface VerifyOTPRequest {
   phone: string;
-  otp: string;
+  otp_code: string;
+  device_id: string;
+  device_type?: string;
+  device_name?: string;
 }
 
 export interface AuthResponse {
   access_token: string;
+  refresh_token: string;
   token_type: string;
+  expires_in: number;
   user: {
     id: string;
     phone: string;
@@ -24,14 +32,23 @@ export interface AuthResponse {
     createdAt: string;
     updatedAt: string;
   };
+  device: {
+    id: string;
+    type: string;
+    name?: string;
+  };
 }
 
 export interface RefreshTokenRequest {
-  refreshToken: string;
+  refresh_token: string;
+  device_id: string;
 }
 
 export interface RefreshTokenResponse {
-  token: string;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
 }
 
 export interface UpdateProfileRequest {
@@ -64,23 +81,97 @@ export interface UserSession {
   is_revoked: boolean;
 }
 
+// Device management utilities
+const getDeviceId = async (): Promise<string> => {
+  try {
+    let deviceId = await SecureStore.getItemAsync('device_id');
+    if (!deviceId) {
+      deviceId = uuidv4() as string;
+      await SecureStore.setItemAsync('device_id', deviceId);
+    }
+    return deviceId;
+  } catch (error) {
+    // Fallback to generating a new device ID
+    return uuidv4() as string;
+  }
+};
+
+const getDeviceType = (): string => {
+  if (Platform.OS === 'ios' || Platform.OS === 'android') {
+    return 'mobile';
+  }
+  return 'web';
+};
+
+const getDeviceName = (): string => {
+  return `${Platform.OS} ${Platform.Version}`;
+};
+
+// Token storage utilities
+const storeTokens = async (tokens: { access_token: string; refresh_token: string }): Promise<void> => {
+  try {
+    await SecureStore.setItemAsync('access_token', tokens.access_token);
+    await SecureStore.setItemAsync('refresh_token', tokens.refresh_token);
+  } catch (error) {
+    console.error('Failed to store tokens:', error);
+  }
+};
+
+const getStoredTokens = async (): Promise<{ access_token: string | null; refresh_token: string | null }> => {
+  try {
+    const accessToken = await SecureStore.getItemAsync('access_token');
+    const refreshToken = await SecureStore.getItemAsync('refresh_token');
+    return { access_token: accessToken, refresh_token: refreshToken };
+  } catch (error) {
+    console.error('Failed to get stored tokens:', error);
+    return { access_token: null, refresh_token: null };
+  }
+};
+
+const clearTokens = async (): Promise<void> => {
+  try {
+    await SecureStore.deleteItemAsync('access_token');
+    await SecureStore.deleteItemAsync('refresh_token');
+  } catch (error) {
+    console.error('Failed to clear tokens:', error);
+  }
+};
+
 // Auth service functions
 export const authService = {
   /**
    * Send OTP to phone number
    */
-  async sendOTP(data: LoginRequest): Promise<ApiResponse<{ detail: string }>> {
+  async sendOTP(data: { phone: string }): Promise<ApiResponse<{ detail: string; bypass_code?: string }>> {
+    const deviceId = await getDeviceId();
+    
+    // Debug logging
+    console.log('🔍 DEBUG: EXPO_PUBLIC_BYPASS_OTP value:', process.env.EXPO_PUBLIC_BYPASS_OTP);
+    console.log('🔍 DEBUG: typeof EXPO_PUBLIC_BYPASS_OTP:', typeof process.env.EXPO_PUBLIC_BYPASS_OTP);
+    console.log('🔍 DEBUG: EXPO_PUBLIC_BYPASS_OTP === "true":', process.env.EXPO_PUBLIC_BYPASS_OTP === 'true');
+    console.log('🔍 DEBUG: EXPO_PUBLIC_BYPASS_OTP === "1":', process.env.EXPO_PUBLIC_BYPASS_OTP === '1');
+    
     // Temporary bypass for OTP during production phase
     // Set EXPO_PUBLIC_BYPASS_OTP=true to skip real OTP requests
     if (process.env.EXPO_PUBLIC_BYPASS_OTP === 'true' || process.env.EXPO_PUBLIC_BYPASS_OTP === '1') {
+      console.log('✅ BYPASS: OTP bypass is enabled, returning bypass response');
       return {
-        data: { detail: 'OTP bypass enabled' },
+        data: { 
+          detail: 'OTP bypass enabled',
+          bypass_code: '000000'
+        },
         success: true,
       };
     }
+    
+    console.log('❌ BYPASS: OTP bypass is disabled, making real API call');
+    
     try {
-      // Use correct backend endpoint with /auth prefix
-      const response = await apiClient.post('/auth/otp/request', data);
+      // Use new v2 auth endpoint
+      const response = await apiClient.post('/auth/request-otp', {
+        phone: data.phone,
+        device_id: deviceId
+      });
       return {
         data: response.data,
         success: true,
@@ -96,16 +187,35 @@ export const authService = {
   /**
    * Verify OTP and get tokens
    */
-  async verifyOTP(data: VerifyOTPRequest): Promise<ApiResponse<AuthResponse>> {
+  async verifyOTP(data: { phone: string; otp: string }): Promise<ApiResponse<AuthResponse>> {
+    const deviceId = await getDeviceId();
+    const deviceType = getDeviceType();
+    const deviceName = getDeviceName();
+    
+    // Debug logging
+    console.log('🔍 DEBUG VERIFY: EXPO_PUBLIC_BYPASS_OTP value:', process.env.EXPO_PUBLIC_BYPASS_OTP);
+    console.log('🔍 DEBUG VERIFY: OTP code received:', data.otp);
+    console.log('🔍 DEBUG VERIFY: OTP code length:', data.otp?.length);
+    
     // Bypass only after OTP step: if enabled, accept any 6-digit OTP as valid
     if (process.env.EXPO_PUBLIC_BYPASS_OTP === 'true' || process.env.EXPO_PUBLIC_BYPASS_OTP === '1') {
+      console.log('✅ BYPASS VERIFY: OTP bypass is enabled, checking code length');
       const code = String(data.otp || '').trim();
       if (code.length === 6) {
+        console.log('✅ BYPASS VERIFY: Code length is 6, returning bypass response');
         const fakeNow = new Date().toISOString();
+        const fakeTokens = {
+          access_token: 'bypass-access-token',
+          refresh_token: 'bypass-refresh-token'
+        };
+        await storeTokens(fakeTokens);
+        
         return {
           data: {
-            access_token: 'bypass-access-token',
+            access_token: fakeTokens.access_token,
+            refresh_token: fakeTokens.refresh_token,
             token_type: 'bearer',
+            expires_in: 900, // 15 minutes
             user: {
               id: 'bypass-user',
               phone: data.phone,
@@ -116,16 +226,36 @@ export const authService = {
               createdAt: fakeNow,
               updatedAt: fakeNow,
             },
+            device: {
+              id: deviceId,
+              type: deviceType,
+              name: deviceName
+            }
           },
           success: true,
         };
+      } else {
+        console.log('❌ BYPASS VERIFY: Code length is not 6, code:', code, 'length:', code.length);
       }
+    } else {
+      console.log('❌ BYPASS VERIFY: OTP bypass is disabled, making real API call');
     }
+    
     try {
-      const response = await apiClient.post('/auth/otp/verify', {
+      const response = await apiClient.post('/auth/verify-otp', {
         phone: data.phone,
-        code: data.otp,
+        otp_code: data.otp,
+        device_id: deviceId,
+        device_type: deviceType,
+        device_name: deviceName
       });
+      
+      // Store tokens securely
+      await storeTokens({
+        access_token: response.data.access_token,
+        refresh_token: response.data.refresh_token
+      });
+      
       return {
         data: response.data,
         success: true,
@@ -167,18 +297,74 @@ export const authService = {
   /**
    * Refresh access token
    */
-  async refreshToken(data: RefreshTokenRequest): Promise<ApiResponse<RefreshTokenResponse>> {
+  async refreshToken(): Promise<ApiResponse<RefreshTokenResponse>> {
     try {
-      const response = await apiClient.post('/refresh', data);
+      const { refresh_token } = await getStoredTokens();
+      if (!refresh_token) {
+        return {
+          error: 'No refresh token available',
+          success: false,
+        };
+      }
+      
+      const deviceId = await getDeviceId();
+      const response = await apiClient.post('/auth/refresh', {
+        refresh_token,
+        device_id: deviceId
+      });
+      
+      // Store new tokens
+      await storeTokens({
+        access_token: response.data.access_token,
+        refresh_token: response.data.refresh_token
+      });
+      
       return {
         data: response.data,
         success: true,
       };
     } catch (error: any) {
+      // If refresh fails, clear tokens
+      await clearTokens();
       return {
         error: error.response?.data?.detail || 'Failed to refresh token',
         success: false,
       };
+    }
+  },
+
+  /**
+   * Auto-refresh token if needed
+   */
+  async autoRefreshToken(): Promise<boolean> {
+    try {
+      const { access_token, refresh_token } = await getStoredTokens();
+      if (!access_token || !refresh_token) {
+        return false;
+      }
+      
+      // Check if access token is expired (basic check)
+      const tokenParts = access_token.split('.');
+      if (tokenParts.length !== 3) {
+        return false;
+      }
+      
+      try {
+        const payload = JSON.parse(atob(tokenParts[1]));
+        const now = Math.floor(Date.now() / 1000);
+        
+        // If token expires in less than 5 minutes, refresh it
+        if (payload.exp - now < 300) {
+          const result = await this.refreshToken();
+          return result.success;
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    } catch (error) {
+      console.error('Auto refresh failed:', error);
+      return false;
     }
   },
 
@@ -273,17 +459,89 @@ export const authService = {
   },
 
   /**
-   * Logout user
+   * Logout user from current device
    */
   async logout(): Promise<ApiResponse<void>> {
     try {
-      await apiClient.post('/auth/me/sessions/logout-all');
+      const { refresh_token } = await getStoredTokens();
+      const deviceId = await getDeviceId();
+      
+      if (refresh_token) {
+        await apiClient.post('/auth/logout', {
+          refresh_token,
+          device_id: deviceId
+        });
+      }
+      
+      // Clear stored tokens
+      await clearTokens();
+      
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      // Clear tokens even if logout request fails
+      await clearTokens();
+      return {
+        error: error.response?.data?.detail || 'Failed to logout',
+        success: false,
+      };
+    }
+  },
+
+  /**
+   * Logout from all devices
+   */
+  async logoutAllDevices(userId: string): Promise<ApiResponse<void>> {
+    try {
+      await apiClient.post(`/auth/logout-all?user_id=${userId}`);
+      
+      // Clear stored tokens
+      await clearTokens();
+      
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      // Clear tokens even if logout request fails
+      await clearTokens();
+      return {
+        error: error.response?.data?.detail || 'Failed to logout from all devices',
+        success: false,
+      };
+    }
+  },
+
+  /**
+   * Get user devices
+   */
+  async getUserDevices(userId: string): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await apiClient.get(`/auth/devices?user_id=${userId}`);
+      return {
+        data: response.data.devices,
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.detail || 'Failed to get devices',
+        success: false,
+      };
+    }
+  },
+
+  /**
+   * Revoke specific device
+   */
+  async revokeDevice(userId: string, deviceId: string): Promise<ApiResponse<void>> {
+    try {
+      await apiClient.post(`/auth/revoke-device?user_id=${userId}&device_id=${deviceId}`);
       return {
         success: true,
       };
     } catch (error: any) {
       return {
-        error: error.response?.data?.detail || 'Failed to logout',
+        error: error.response?.data?.detail || 'Failed to revoke device',
         success: false,
       };
     }
