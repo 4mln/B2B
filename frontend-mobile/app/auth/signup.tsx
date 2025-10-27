@@ -7,8 +7,9 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Alert, I18nManager, KeyboardAvoidingView, Platform, Pressable, ScrollView, TouchableOpacity } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Stack as Box, H1 as Heading, XStack as HStack, Input, Select, Spinner, Text, YStack as VStack } from 'tamagui';
+import { Stack as Box, H1 as Heading, XStack as HStack, Input, Spinner, Text, YStack as VStack } from 'tamagui';
 import * as yup from 'yup';
 
 import { useMessageBoxStore } from '@/context/messageBoxStore';
@@ -50,12 +51,14 @@ export default function SignupScreen(props: SignupScreenProps) {
   const getButtonStyle = () => ({
     backgroundColor: isLoading || isLoadingGuilds ? colors.gray[300] : colors.primary[500],
     borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     alignItems: 'center' as const,
-    marginTop: 12,
+    marginTop: 20,
     opacity: isLoading || isLoadingGuilds ? 0.6 : 1,
-    minHeight: 44,
+    minHeight: 36,
+    maxWidth: 200,
+    alignSelf: 'center' as const,
   });
 
   const getButtonTextStyle = () => ({
@@ -67,6 +70,8 @@ export default function SignupScreen(props: SignupScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingGuilds, setIsLoadingGuilds] = useState(true);
   const [isGuildModalOpen, setIsGuildModalOpen] = useState(false);
+  const [guildOpen, setGuildOpen] = useState(false);
+  const [guildItems, setGuildItems] = useState<{ label: string; value: string }[]>([]);
   
   // RHF + Yup schema
   const nameRegex = /^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FFa-zA-Z\s\-]+$/;
@@ -118,13 +123,15 @@ export default function SignupScreen(props: SignupScreenProps) {
         // In development, we'll use mock data
         // const response = await apiClient.get('/guilds');
         // setGuilds(response.data);
-        
+
         // Mock data for development
         setTimeout(() => {
-          setGuilds([
+          const mockGuilds = [
             { id: '1', name: 'الکتریک' },
             { id: '2', name: 'ابزار' },
-          ]);
+          ];
+          setGuilds(mockGuilds);
+          setGuildItems(mockGuilds.map(g => ({ label: g.name, value: g.id })));
           setIsLoadingGuilds(false);
         }, 1000);
       } catch (error) {
@@ -212,7 +219,7 @@ export default function SignupScreen(props: SignupScreenProps) {
         >
           <VStack
             paddingHorizontal={24}
-            paddingTop={28}
+            paddingTop={5}
             paddingBottom={20}
             maxWidth={400}
             alignSelf="center"
@@ -234,7 +241,7 @@ export default function SignupScreen(props: SignupScreenProps) {
                 </Box>
               </Animated.View>
               <VStack alignItems="center" space={8}>
-                <Heading size="xl" textAlign="center" color={isDark ? '$textDark100' : '$textLight900'}>
+                <Heading size="xl" textAlign="center" paddingTop={-5} color={isDark ? '$textDark100' : '$textLight900'}>
                   {t('signup.title')}
                 </Heading>
                 <Text 
@@ -250,19 +257,10 @@ export default function SignupScreen(props: SignupScreenProps) {
             </VStack>
 
             {/* Form Section */}
-            <VStack space="$lg" backgroundColor="transparent" borderRadius="$lg" padding={20}>
+            <VStack space="$lg" backgroundColor="transparent"  borderRadius="$lg" padding={20}>
               {/* Name Fields Row */}
-              <HStack space={16}>
+              <HStack space={16} paddingTop={-20}>
                 <VStack flex={1} space={8}>
-                  <Text
-                    fontSize="$sm"
-                    fontWeight="$medium"
-                    color={isDark ? '$textDark100' : '$textLight900'}
-                    marginBottom="$xs"
-                    textAlign="right"
-                  >
-                    {t('signup.firstName')}
-                  </Text>
                   <Controller
                     control={control}
                     name="firstName"
@@ -273,11 +271,11 @@ export default function SignupScreen(props: SignupScreenProps) {
                         onChangeText={onChange}
                         disabled={isLoading}
                         textAlign="right"
-                        height={44}
+                        height={35}
                         borderColor={errors.firstName ? '$error500' : (isDark ? '#2a2e39' : '#e2e8f0')}
                         backgroundColor={isDark ? '#1f2937' : '#ffffff'}
                         borderRadius="$xl"
-                        fontSize="$sm"
+                        fontSize="$xs"
                         color={isDark ? '#d1d4dc' : '#1e293b'}
                         focusStyle={{
                           borderColor: '$primary500',
@@ -287,21 +285,12 @@ export default function SignupScreen(props: SignupScreenProps) {
                     )}
                   />
                   {!!errors.firstName?.message && (
-                    <Text color="$error500" fontSize="$sm" marginTop={4} textAlign="right">
+                    <Text color="$error500" fontSize={13} marginTop={4} textAlign="right">
                       {String(errors.firstName.message)}
                     </Text>
                   )}
                 </VStack>
                 <VStack flex={1} space={8}>
-                  <Text
-                    fontSize="$sm"
-                    fontWeight="$medium"
-                    color={isDark ? '$textDark100' : '$textLight900'}
-                    marginBottom="$xs"
-                    textAlign="right"
-                  >
-                    {t('signup.lastName')}
-                  </Text>
                   <Controller
                     control={control}
                     name="lastName"
@@ -312,7 +301,7 @@ export default function SignupScreen(props: SignupScreenProps) {
                         onChangeText={onChange}
                         disabled={isLoading}
                         textAlign="right"
-                        height={44}
+                        height={35}
                         borderColor={errors.lastName ? '$error500' : (isDark ? '#2a2e39' : '#e2e8f0')}
                         backgroundColor={isDark ? '#1f2937' : '#ffffff'}
                         borderRadius="$xl"
@@ -326,7 +315,7 @@ export default function SignupScreen(props: SignupScreenProps) {
                     )}
                   />
                   {!!errors.lastName?.message && (
-                    <Text color="$error500" fontSize="$sm" marginTop={4} textAlign="right">
+                    <Text color="$error500" fontSize={13} marginTop={4} textAlign="right">
                       {String(errors.lastName.message)}
                     </Text>
                   )}
@@ -335,15 +324,6 @@ export default function SignupScreen(props: SignupScreenProps) {
 
               {/* National ID Field */}
               <VStack space={8}>
-                <Text
-                  fontSize="$sm"
-                  fontWeight="$medium"
-                  color={isDark ? '$textDark100' : '$textLight900'}
-                  marginBottom="$xs"
-                  textAlign="right"
-                >
-                  {t('signup.nationalId')}
-                </Text>
                 <Controller
                   control={control}
                   name="nationalId"
@@ -356,7 +336,7 @@ export default function SignupScreen(props: SignupScreenProps) {
                       disabled={isLoading}
                       maxLength={10}
                       textAlign="right"
-                      height={44}
+                      height={35}
                       borderColor={errors.nationalId ? '$error500' : (isDark ? '#2a2e39' : '#e2e8f0')}
                       backgroundColor={isDark ? '#1f2937' : '#ffffff'}
                       borderRadius="$xl"
@@ -370,7 +350,7 @@ export default function SignupScreen(props: SignupScreenProps) {
                   )}
                 />
                 {!!errors.nationalId?.message && (
-                  <Text color="$error500" fontSize="$sm" marginTop={4} textAlign="right">
+                  <Text color="$error500" fontSize={13} marginTop={4} textAlign="right">
                     {String(errors.nationalId.message)}
                   </Text>
                 )}
@@ -378,15 +358,6 @@ export default function SignupScreen(props: SignupScreenProps) {
 
               {/* Phone Field */}
               <VStack space={8}>
-                <Text
-                  fontSize="$sm"
-                  fontWeight="$medium"
-                  color={isDark ? '$textDark100' : '$textLight900'}
-                  marginBottom="$xs"
-                  textAlign="right"
-                >
-                  {t('signup.phone')}
-                </Text>
                 <Controller
                   control={control}
                   name="phone"
@@ -398,7 +369,7 @@ export default function SignupScreen(props: SignupScreenProps) {
                       onChangeText={onChange}
                       disabled={isLoading}
                       textAlign="right"
-                      height={44}
+                      height={35}
                       borderColor={errors.phone ? '$error500' : (isDark ? '#2a2e39' : '#e2e8f0')}
                       backgroundColor={isDark ? '#1f2937' : '#ffffff'}
                       borderRadius="$xl"
@@ -412,7 +383,7 @@ export default function SignupScreen(props: SignupScreenProps) {
                   )}
                 />
                 {!!errors.phone?.message && (
-                  <Text color="$error500" fontSize="$sm" marginTop={4} textAlign="right">
+                  <Text color="$error500" fontSize={13} marginTop={4} textAlign="right">
                     {String(errors.phone.message)}
                   </Text>
                 )}
@@ -420,19 +391,9 @@ export default function SignupScreen(props: SignupScreenProps) {
 
               {/* Guild Selection Field */}
               <VStack space={8}>
-                <Text
-                  fontSize="$sm"
-                  fontWeight="$medium"
-                  color={isDark ? '$textDark100' : '$textLight900'}
-                  marginBottom="$xs"
-                  textAlign="right"
-                >
-                  {t('signup.guild')}
-                </Text>
-
                 {isLoadingGuilds ? (
                   <HStack 
-                    height={50} 
+                    height={40}
                     paddingHorizontal={16} 
                     borderWidth={1} 
                     borderColor="$borderLight300" 
@@ -447,53 +408,59 @@ export default function SignupScreen(props: SignupScreenProps) {
                     </Text>
                   </HStack>
                 ) : (
-                  <Select
+                  <DropDownPicker
+                    open={guildOpen}
                     value={selectedGuild}
-                    onValueChange={(val) => {
-                      setSelectedGuild(val as string);
-                      setValue('guildId', val as string, { shouldValidate: true });
+                    items={guildItems}
+                    setOpen={setGuildOpen}
+                    setValue={(callback) => {
+                      const value = callback(selectedGuild);
+                      setSelectedGuild(value);
+                      setValue('guildId', value, { shouldValidate: true });
+                    }}
+                    setItems={setGuildItems}
+                    placeholder={t('signup.selectGuild')}
+                    searchable={true}
+                    searchPlaceholder={t('signup.searchGuilds')}
+                    style={{
+                      backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                      borderColor: errors.guildId ? '#ef4444' : (isDark ? '#2a2e39' : '#e2e8f0'),
+                      borderRadius: 16,
+                      minHeight: 35,
+                      height: 35,
+                    }}
+                    dropDownContainerStyle={{
+                      backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                      borderColor: isDark ? '#374151' : '#e5e7eb',
+                      borderRadius: 8,
+                      marginTop: 4,
+                    }}
+                    textStyle={{
+                      color: isDark ? '#d1d4dc' : '#1e293b',
+                      fontSize: 14,
+                      textAlign: 'right',
+                      fontFamily: 'Vazirmatn-Regular',
+                    }}
+                    searchTextInputStyle={{
+                      color: isDark ? '#d1d4dc' : '#1e293b',
+                      textAlign: 'right',
+                      borderColor: isDark ? '#374151' : '#e5e7eb',
+                    }}
+                    searchContainerStyle={{
+                      borderBottomColor: isDark ? '#374151' : '#e5e7eb',
+                      paddingBottom: 8,
+                    }}
+                    listItemLabelStyle={{
+                      color: isDark ? '#d1d4dc' : '#1e293b',
+                      textAlign: 'right',
                     }}
                     disabled={isLoading}
-                  >
-                    <Select.Trigger
-                      height={44}
-                      paddingHorizontal={16}
-                      borderWidth={1}
-                      borderColor={errors.guildId ? '$error500' : (isDark ? '#2a2e39' : '#e2e8f0')}
-                      borderRadius="$xl"
-                      backgroundColor={isDark ? '#1f2937' : '#ffffff'}
-                      alignItems="center"
-                      justifyContent="space-between"
-                    >
-                      <Select.Value placeholder={t('signup.selectGuild') as any} />
-                    </Select.Trigger>
-                    <Select.Content zIndex={20000}>
-                      <Box
-                        backgroundColor={isDark ? '#1f2937' : '#ffffff'}
-                        borderWidth={1}
-                        borderColor={isDark ? '#374151' : '#e5e7eb'}
-                        borderRadius={8}
-                        margin={4}
-                        shadowColor="#000"
-                        shadowOpacity={0.15}
-                        shadowRadius={8}
-                        elevation={8}
-                        maxWidth="100%"
-                        position="relative"
-                      >
-                        <Select.Viewport backgroundColor={isDark ? '#1f2937' : '#ffffff'} maxHeight={200} style={{ maxWidth: '100%' }}>
-                          {guilds.map((g) => (
-                            <Select.Item key={g.id} value={g.id}>
-                              <Select.ItemText style={{ color: isDark ? '#d1d4dc' : '#1e293b' }}>{g.name}</Select.ItemText>
-                            </Select.Item>
-                          ))}
-                        </Select.Viewport>
-                      </Box>
-                    </Select.Content>
-                  </Select>
+                    zIndex={20000}
+                    zIndexInverse={1000}
+                  />
                 )}
                 {!!errors.guildId?.message && (
-                  <Text color="$error500" fontSize="$sm" marginTop={4} textAlign="right">
+                  <Text color="$error500" fontSize={13} marginTop={4} textAlign="right">
                     {String(errors.guildId.message)}
                   </Text>
                 )}
@@ -503,7 +470,7 @@ export default function SignupScreen(props: SignupScreenProps) {
 
             {/* Submit Button */}
             <TouchableOpacity
-              style={getButtonStyle()}
+              style={[getButtonStyle(), { marginTop: -20 }]}
               onPress={handleSubmit(handleSignup)}
               disabled={isLoading || isLoadingGuilds}
             >
