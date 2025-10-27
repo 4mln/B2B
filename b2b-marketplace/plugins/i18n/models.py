@@ -49,7 +49,7 @@ class UserLanguagePreference(Base):
     __tablename__ = "user_language_preferences"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     language_id = Column(Integer, ForeignKey("languages.id"), nullable=False)
     is_primary = Column(Boolean, default=True)  # Primary language preference
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -79,7 +79,7 @@ class UserCurrencyPreference(Base):
     __tablename__ = "user_currency_preferences"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     currency_id = Column(Integer, ForeignKey("currencies.id"), nullable=False)
     is_primary = Column(Boolean, default=True)  # Primary currency preference
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -106,7 +106,7 @@ class UserTimezonePreference(Base):
     __tablename__ = "user_timezone_preferences"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     timezone_id = Column(Integer, ForeignKey("timezones.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
@@ -133,7 +133,7 @@ class UserDateFormatPreference(Base):
     __tablename__ = "user_date_format_preferences"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     date_format_id = Column(Integer, ForeignKey("date_formats.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     

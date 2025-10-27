@@ -10,7 +10,7 @@ from . import crud
 from .dependencies import enforce_rfq_limit
 from plugins.ratings.crud import get_reputation_score
 from sqlalchemy import select
-from plugins.seller.models import Seller
+from app.models.user import User as AppUser
 
 def resolve_user_id(user):
     """Resolve user ID for both legacy and new user models"""
@@ -108,30 +108,27 @@ async def suggest_sellers_for_rfq(
     if not rfq:
         raise HTTPException(status_code=404, detail="RFQ not found")
 
-    # Base seller list
-    result = await db.execute(select(Seller))
-    sellers: List[Seller] = result.scalars().all()
+    # Base seller list - get users with seller role
+    result = await db.execute(select(AppUser).where(AppUser.role.in_(["seller", "both"])))
+    sellers: List[AppUser] = result.scalars().all()
 
     # Score sellers
-    scored: list[tuple[float, Seller]] = []
+    scored: list[tuple[float, AppUser]] = []
     title = (rfq.title or "").lower()
     for s in sellers:
         score = 0.0
         # Feature/verification boosts
-        if getattr(s, "is_verified", False):
+        if getattr(s, "kyc_status", "") in ("business_verified", "otp_verified"):
             score += 2.0
         if getattr(s, "is_featured", False):
             score += 1.0
         # Business meta boosts
-        owner: Optional[User] = await db.get(User, s.user_id)
-        if owner:
-            if getattr(owner, "kyc_status", "") in ("business_verified", "otp_verified"):
-                score += 1.0
-            # Simple keyword match on business_name/industry
-            bn = (getattr(owner, "business_name", "") or "").lower()
-            ind = (getattr(owner, "business_industry", "") or "").lower()
-            if title and (title in bn or title in ind):
-                score += 1.5
+        if getattr(s, "kyc_status", "") in ("business_verified", "otp_verified"):
+            score += 1.0
+        # Simple keyword match on business_name/industry
+        bn = (getattr(s, "business_name", "") or "").lower()
+        if title and title in bn:
+            score += 1.5
         # Reputation boost
         try:
             rep = await get_reputation_score(db, s.id)
@@ -145,7 +142,6 @@ async def suggest_sellers_for_rfq(
 
     cards = []
     for s in top:
-        owner: Optional[User] = await db.get(User, s.user_id)
         rep = 0.0
         try:
             rep = float(await get_reputation_score(db, s.id) or 0)
@@ -154,11 +150,8 @@ async def suggest_sellers_for_rfq(
         cards.append({
             "seller_id": s.id,
             "name": s.name,
-            "subscription": s.subscription,
-            "is_verified": s.is_verified,
-            "is_featured": s.is_featured,
-            "business_name": getattr(owner, "business_name", None) if owner else None,
-            "kyc_status": getattr(owner, "kyc_status", None) if owner else None,
+            "business_name": getattr(s, "business_name", None),
+            "kyc_status": getattr(s, "kyc_status", None),
             "reputation": rep,
         })
 

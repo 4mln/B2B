@@ -11,7 +11,7 @@ class AnalyticsEvent(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=True)
     event_type = Column(String, nullable=False)
     event_data = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -29,7 +29,7 @@ class BusinessMetrics(Base):
 class UserAnalytics(Base):
     __tablename__ = "user_analytics"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=True)
 
 
 class SellerAnalytics(Base):

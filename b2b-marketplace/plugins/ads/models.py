@@ -60,7 +60,7 @@ class Ad(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
-    seller_id = Column(Integer, ForeignKey("sellers.id"), nullable=False)
+    seller_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     title = Column(String(255), nullable=False)
     campaign_id = Column(Integer, ForeignKey("campaigns.id"))
     description = Column(Text, nullable=True)
@@ -116,7 +116,7 @@ class Ad(Base):
     last_served_at = Column(DateTime(timezone=True), nullable=True)
     
     # Relationships
-    seller = relationship("Seller")
+    seller = relationship("User", back_populates="ads")
     impressions_log = relationship("AdImpression", back_populates="ad")
     clicks_log = relationship("AdClick", back_populates="ad")
     conversions_log = relationship("AdConversion", back_populates="ad")
@@ -129,7 +129,7 @@ class AdCampaign(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
-    seller_id = Column(Integer, ForeignKey("sellers.id"), nullable=False)
+    seller_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     status = Column(Enum(AdStatus), default=AdStatus.DRAFT)
@@ -154,7 +154,7 @@ class AdCampaign(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    seller = relationship("Seller")
+    seller = relationship("User", back_populates="ad_campaigns")
     ads = relationship("Ad", back_populates="campaign")
 
 
@@ -165,7 +165,7 @@ class AdImpression(Base):
     id = Column(Integer, primary_key=True, index=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
     ad_id = Column(Integer, ForeignKey("ads.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=True)
     session_id = Column(String(255), nullable=True)
     
     # Impression details
@@ -197,7 +197,7 @@ class AdClick(Base):
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
     ad_id = Column(Integer, ForeignKey("ads.id"), nullable=False)
     impression_id = Column(Integer, ForeignKey("ad_impressions.id"), nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=True)
     session_id = Column(String(255), nullable=True)
     
     # Click details
@@ -231,7 +231,7 @@ class AdConversion(Base):
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
     ad_id = Column(Integer, ForeignKey("ads.id"), nullable=False)
     click_id = Column(Integer, ForeignKey("ad_clicks.id"), nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=True)
     
     # Conversion details
     conversion_type = Column(String(100), nullable=False)  # purchase, signup, download, etc.
@@ -311,7 +311,7 @@ class AdBlocklist(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
-    seller_id = Column(Integer, ForeignKey("sellers.id"), nullable=True)
+    seller_id = Column(Integer, ForeignKey("users_new.id"), nullable=True)
     domain = Column(String(255), nullable=True)
     url_pattern = Column(String(500), nullable=True)
     reason = Column(Text, nullable=False)
@@ -325,7 +325,7 @@ class AdBlocklist(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    seller = relationship("Seller")
+    seller = relationship("User")
 class AdAnalytics(Base):
     """Aggregated ad analytics"""
     __tablename__ = "ad_analytics"

@@ -1,7 +1,7 @@
 import apiClient from './api';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { v4 as uuidv4 } from 'react-native-uuid';
+import uuid from 'react-native-uuid';
 
 // Types
 export interface LoginRequest {
@@ -86,13 +86,13 @@ const getDeviceId = async (): Promise<string> => {
   try {
     let deviceId = await SecureStore.getItemAsync('device_id');
     if (!deviceId) {
-      deviceId = uuidv4() as string;
+      deviceId = uuid.v4() as string;
       await SecureStore.setItemAsync('device_id', deviceId);
     }
     return deviceId;
   } catch (error) {
     // Fallback to generating a new device ID
-    return uuidv4() as string;
+    return uuid.v4() as string;
   }
 };
 
@@ -167,10 +167,10 @@ export const authService = {
     console.log('❌ BYPASS: OTP bypass is disabled, making real API call');
     
     try {
-      // Use new v2 auth endpoint
-      const response = await apiClient.post('/auth/request-otp', {
+      // Use plugin auth endpoint
+      const response = await apiClient.post('/api/v1/auth/otp/request', {
         phone: data.phone,
-        device_id: deviceId
+        is_signup: true
       });
       return {
         data: response.data,
@@ -202,52 +202,81 @@ export const authService = {
       console.log('✅ BYPASS VERIFY: OTP bypass is enabled, checking code length');
       const code = String(data.otp || '').trim();
       if (code.length === 6) {
-        console.log('✅ BYPASS VERIFY: Code length is 6, returning bypass response');
-        const fakeNow = new Date().toISOString();
-        const fakeTokens = {
-          access_token: 'bypass-access-token',
-          refresh_token: 'bypass-refresh-token'
-        };
-        await storeTokens(fakeTokens);
+        console.log('✅ BYPASS VERIFY: Code length is 6, making real API call with bypass OTP');
         
-        return {
-          data: {
-            access_token: fakeTokens.access_token,
-            refresh_token: fakeTokens.refresh_token,
-            token_type: 'bearer',
-            expires_in: 900, // 15 minutes
-            user: {
-              id: 'bypass-user',
-              phone: data.phone,
-              name: 'Bypass User',
-              email: undefined,
-              avatar: undefined,
-              isVerified: true,
-              createdAt: fakeNow,
-              updatedAt: fakeNow,
+        try {
+          // Make a real API call with the bypass OTP code "000000"
+          const response = await apiClient.post('/api/v1/auth/otp/verify', {
+            phone: data.phone,
+            code: '000000' // Use the bypass code
+          });
+          
+          // Store tokens securely
+          await storeTokens({
+            access_token: response.data.access_token,
+            refresh_token: response.data.refresh_token
+          });
+          
+          console.log('🔍 BYPASS VERIFY: Real API call successful:', response.data);
+          return {
+            data: response.data,
+            success: true,
+          };
+        } catch (error: any) {
+          console.log('⚠️ BYPASS VERIFY: Backend doesn\'t support bypass, falling back to fake tokens');
+          console.error('Backend error:', error.response?.data || error.message);
+          
+          // Fallback to fake tokens if backend doesn't support bypass
+          const fakeNow = new Date().toISOString();
+          const fakeTokens = {
+            access_token: 'bypass-access-token',
+            refresh_token: 'bypass-refresh-token'
+          };
+          await storeTokens(fakeTokens);
+          
+          const bypassResponse = {
+            data: {
+              access_token: fakeTokens.access_token,
+              refresh_token: fakeTokens.refresh_token,
+              token_type: 'bearer',
+              expires_in: 900, // 15 minutes
+              user: {
+                id: 'bypass-user',
+                phone: data.phone,
+                name: 'Bypass User',
+                email: undefined,
+                avatar: undefined,
+                isVerified: true,
+                createdAt: fakeNow,
+                updatedAt: fakeNow,
+              },
+              device: {
+                id: deviceId,
+                type: deviceType,
+                name: deviceName
+              }
             },
-            device: {
-              id: deviceId,
-              type: deviceType,
-              name: deviceName
-            }
-          },
-          success: true,
-        };
+            success: true,
+          };
+          
+          console.log('🔍 BYPASS VERIFY: Returning fallback response:', bypassResponse);
+          return bypassResponse;
+        }
       } else {
         console.log('❌ BYPASS VERIFY: Code length is not 6, code:', code, 'length:', code.length);
+        return {
+          error: 'Please enter a 6-digit OTP code',
+          success: false,
+        };
       }
-    } else {
-      console.log('❌ BYPASS VERIFY: OTP bypass is disabled, making real API call');
     }
     
+    // Normal OTP verification flow (only runs if bypass is disabled)
+    console.log('❌ BYPASS VERIFY: OTP bypass is disabled, making real API call');
     try {
-      const response = await apiClient.post('/auth/verify-otp', {
+      const response = await apiClient.post('/api/v1/auth/otp/verify', {
         phone: data.phone,
-        otp_code: data.otp,
-        device_id: deviceId,
-        device_type: deviceType,
-        device_name: deviceName
+        code: data.otp
       });
       
       // Store tokens securely
@@ -273,7 +302,7 @@ export const authService = {
    */
   async userExists(phone: string): Promise<ApiResponse<{ exists: boolean }>> {
     try {
-      const response = await apiClient.get(`/auth/exists`, { params: { phone } });
+      const response = await apiClient.get(`/api/v1/auth/exists`, { params: { phone } });
       // Backend returns {exists: boolean, phone_exists: boolean, national_id_exists: boolean}
       // We need to map it to {exists: boolean} for frontend compatibility
       return { 
@@ -287,7 +316,7 @@ export const authService = {
 
   async phoneOrNationalIdExists(phone: string, nationalId: string): Promise<ApiResponse<{ exists: boolean; phone_exists: boolean; national_id_exists: boolean }>> {
     try {
-      const response = await apiClient.get(`/auth/exists`, { params: { phone, national_id: nationalId } });
+      const response = await apiClient.get(`/api/v1/auth/exists`, { params: { phone, national_id: nationalId } });
       return { data: response.data, success: true };
     } catch (error: any) {
       return { data: { exists: false, phone_exists: false, national_id_exists: false }, error: 'Failed to check identity', success: false };
@@ -552,7 +581,7 @@ export const authService = {
    */
   async signup(data: SignupRequest): Promise<ApiResponse<{ detail: string }>> {
     try {
-      const response = await apiClient.post('/auth/signup', data);
+      const response = await apiClient.post('/api/v1/auth/signup', data);
       return {
         data: response.data,
         success: true,

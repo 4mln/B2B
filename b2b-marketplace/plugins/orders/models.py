@@ -11,8 +11,8 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    buyer_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Add FK if needed
-    seller_id = Column(Integer, ForeignKey("sellers.id"), nullable=False)  # <-- Add FK here
+    buyer_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)  # Add FK if needed
+    seller_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)  # <-- Updated FK here
     product_ids = Column(JSON, nullable=False)  # store list of product items with quantity and price
     total_amount = Column(Float, nullable=False)
     status = Column(SQLAEnum(OrderStatus), default=OrderStatus.pending, nullable=False)
@@ -21,6 +21,6 @@ class Order(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    seller = relationship("Seller")
-    buyer = relationship("User")
+    seller = relationship("User", foreign_keys=[seller_id], back_populates="seller_orders")
+    buyer = relationship("User", foreign_keys=[buyer_id], back_populates="buyer_orders")
     payments = relationship("Payment", back_populates="order")   # expects Payment.order

@@ -10,9 +10,9 @@ class Rating(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
-    rater_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    ratee_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    seller_id = Column(Integer, ForeignKey("sellers.id"), nullable=False)
+    rater_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
+    ratee_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
+    seller_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     quality = Column(Float, nullable=False)
     timeliness = Column(Float, nullable=False)
     communication = Column(Float, nullable=False)
@@ -21,9 +21,9 @@ class Rating(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     order = relationship("Order")
-    rater = relationship("User")
-    ratee = relationship("User")
-    seller = relationship("Seller")
+    rater = relationship("User", foreign_keys=[rater_id], back_populates="ratings_given")
+    ratee = relationship("User", foreign_keys=[ratee_id], back_populates="ratings_received")
+    seller = relationship("User", foreign_keys=[seller_id])
 
 
 

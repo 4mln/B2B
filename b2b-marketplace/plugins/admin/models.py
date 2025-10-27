@@ -85,7 +85,7 @@ class AdminUser(Base):
     __tablename__ = "admin_users"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False, unique=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
     role = Column(Enum(AdminRole), nullable=False, default=AdminRole.ADMIN)
     permissions = Column(JSON, nullable=True)  # List of AdminPermission values
@@ -145,7 +145,7 @@ class AuditLog(Base):
     __table_args__ = {"extend_existing": True}
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
     admin_user_id = Column(Integer, ForeignKey("admin_users.id"), nullable=True)
     
@@ -177,7 +177,7 @@ class SupportTicket(Base):
     __tablename__ = "support_tickets"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
     assigned_admin_id = Column(Integer, ForeignKey("admin_users.id"), nullable=True)
     
@@ -205,7 +205,7 @@ class SupportMessage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     ticket_id = Column(Integer, ForeignKey("support_tickets.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
     admin_user_id = Column(Integer, ForeignKey("admin_users.id"), nullable=True)
     
@@ -227,7 +227,7 @@ class ContentModeration(Base):
     id = Column(Integer, primary_key=True, index=True)
     content_type = Column(String(100), nullable=False)  # product, review, message, ad
     content_id = Column(Integer, nullable=False)
-    reported_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reported_by = Column(Integer, ForeignKey("users_new.id"), nullable=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
     assigned_admin_id = Column(Integer, ForeignKey("admin_users.id"), nullable=True)
     

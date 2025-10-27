@@ -66,7 +66,7 @@ async def setup_test_db(test_engine):
         # Import all models to ensure they are registered with metadata
         from plugins.orders.models import Base as OrdersBase
         from plugins.products.models import Base as ProductsBase
-        from plugins.user.models import Base as UserBase, User, Seller
+        from plugins.user.models import Base as UserBase, User
         from plugins.rfq.models import Base as RFQBase
         from plugins.payments.models import Base as PaymentsBase
         from plugins.admin.models import Base as AdminBase
@@ -93,7 +93,7 @@ async def setup_test_db(test_engine):
     async with test_engine.begin() as conn:
         from plugins.orders.models import Base as OrdersBase
         from plugins.products.models import Base as ProductsBase
-        from plugins.user.models import Base as UserBase, User, Seller
+        from plugins.user.models import Base as UserBase, User
         from plugins.rfq.models import Base as RFQBase
         from plugins.payments.models import Base as PaymentsBase
         from plugins.admin.models import Base as AdminBase

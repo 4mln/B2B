@@ -2,11 +2,14 @@
 from datetime import datetime
 import uuid
 from sqlalchemy import (
-    Column, String, Integer, Boolean, DateTime, JSON, CheckConstraint, func
+    Column, String, Integer, Boolean, DateTime, JSON, CheckConstraint, func, Enum
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, BIGINT
 from sqlalchemy.orm import declarative_base, relationship
 from app.db.base import Base
+
+# Import UserRole from auth schemas
+from plugins.auth.schemas import UserRole
 
 def generate_unique_id():
     # implement a readable unique id, e.g. "USR-" + hex(uuid4()) or short uuid
@@ -31,7 +34,7 @@ class User(Base):
 
     # After signup (profile)
     profile_picture = Column(String, nullable=False)                     # mandatory after signup
-    badge = Column(String, nullable=False)                               # seller | buyer | seller/buyer
+    role = Column(Enum(UserRole), default=UserRole.BUYER)                 # buyer, seller, both, user
     rating = Column(Integer, nullable=False, default=0)                  # 0..5
     is_active = Column(Boolean, nullable=False, default=True)
 
@@ -68,6 +71,21 @@ class User(Base):
     # Relationships - using string references to avoid circular imports
     devices = relationship("Device", back_populates="user", cascade="all, delete-orphan")
     sessions = relationship("UserSession", cascade="all, delete-orphan")
+    
+    # Order relationships
+    buyer_orders = relationship("Order", foreign_keys="Order.buyer_id", back_populates="buyer")
+    seller_orders = relationship("Order", foreign_keys="Order.seller_id", back_populates="seller")
+    
+    # Product relationships (as seller)
+    products = relationship("Product", back_populates="seller")
+    
+    # Rating relationships
+    ratings_given = relationship("Rating", foreign_keys="Rating.rater_id", back_populates="rater")
+    ratings_received = relationship("Rating", foreign_keys="Rating.ratee_id", back_populates="ratee")
+    
+    # Ad relationships (as seller)
+    ads = relationship("Ad", back_populates="seller")
+    ad_campaigns = relationship("AdCampaign", back_populates="seller")
 
     __table_args__ = (
         CheckConstraint("rating >= 0 AND rating <= 5", name="chk_user_rating_range"),

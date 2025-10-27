@@ -108,7 +108,9 @@ def resolve_user_id(user):
             return user.id, None
     return None, None
 
-from plugins.seller.crud import get_seller_by_user_id
+from plugins.user.security import get_current_user
+from plugins.user.models import User
+from plugins.auth.schemas import UserRole
 
 def resolve_user_id(user):
     """Resolve user ID for both legacy and new user models"""
@@ -124,6 +126,14 @@ def resolve_user_id(user):
     return None, None
 
 from . import crud, schemas
+
+def is_seller(user: User) -> bool:
+    """Check if user has seller role"""
+    return user.role in [UserRole.SELLER, UserRole.BOTH]
+
+def get_seller_id(user: User) -> int:
+    """Get seller ID from user (for compatibility with existing code)"""
+    return user.id
 
 def resolve_user_id(user):
     """Resolve user ID for both legacy and new user models"""
@@ -186,8 +196,7 @@ def create_ad(
 ):
     """Create a new advertisement"""
     # Verify user is a seller
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller:
+    if not is_seller(current_user):
         raise HTTPException(status_code=403, detail="Only sellers can create ads")
     
     # Validate targeting configuration
@@ -199,7 +208,7 @@ def create_ad(
                 detail=f"Invalid targeting configuration: {', '.join(validation.errors)}"
             )
     
-    return crud.create_ad(db, ad_data, seller.id)
+    return crud.create_ad(db, ad_data, get_seller_id(current_user))
 
 
 @router.get("/", response_model=schemas.AdListResponse)
@@ -212,11 +221,10 @@ def get_my_ads(
     current_user: User = Depends(get_current_user)
 ):
     """Get current user's advertisements"""
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller:
+    if not is_seller(current_user):
         raise HTTPException(status_code=403, detail="Only sellers can view ads")
     
-    ads, total = crud.get_seller_ads(db, seller.id, skip, limit, status, ad_type)
+    ads, total = crud.get_seller_ads(db, get_seller_id(current_user), skip, limit, status, ad_type)
     return schemas.AdListResponse(
         ads=ads,
         total=total,
@@ -237,8 +245,7 @@ def get_ad(
         raise HTTPException(status_code=404, detail="Ad not found")
     
     # Verify ownership
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller or ad.seller_id != seller.id:
+    if not is_seller(current_user) or ad.seller_id != get_seller_id(current_user):
         raise HTTPException(status_code=403, detail="Access denied")
     
     return ad
@@ -257,8 +264,7 @@ def update_ad(
         raise HTTPException(status_code=404, detail="Ad not found")
     
     # Verify ownership
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller or ad.seller_id != seller.id:
+    if not is_seller(current_user) or ad.seller_id != get_seller_id(current_user):
         raise HTTPException(status_code=403, detail="Access denied")
     
     # Validate targeting configuration
@@ -289,8 +295,7 @@ def delete_ad(
         raise HTTPException(status_code=404, detail="Ad not found")
     
     # Verify ownership
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller or ad.seller_id != seller.id:
+    if not is_seller(current_user) or ad.seller_id != get_seller_id(current_user):
         raise HTTPException(status_code=403, detail="Access denied")
     
     success = crud.delete_ad(db, ad_id)
@@ -308,11 +313,10 @@ def create_campaign(
     current_user: User = Depends(get_current_user)
 ):
     """Create a new ad campaign"""
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller:
+    if not is_seller(current_user):
         raise HTTPException(status_code=403, detail="Only sellers can create campaigns")
     
-    return crud.create_campaign(db, campaign_data, seller.id)
+    return crud.create_campaign(db, campaign_data, get_seller_id(current_user))
 
 
 @router.get("/campaigns", response_model=schemas.AdCampaignListResponse)
@@ -324,11 +328,10 @@ def get_my_campaigns(
     current_user: User = Depends(get_current_user)
 ):
     """Get current user's campaigns"""
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller:
+    if not is_seller(current_user):
         raise HTTPException(status_code=403, detail="Only sellers can view campaigns")
     
-    campaigns, total = crud.get_seller_campaigns(db, seller.id, skip, limit, status)
+    campaigns, total = crud.get_seller_campaigns(db, get_seller_id(current_user), skip, limit, status)
     return schemas.AdCampaignListResponse(
         campaigns=campaigns,
         total=total,
@@ -349,8 +352,7 @@ def get_campaign(
         raise HTTPException(status_code=404, detail="Campaign not found")
     
     # Verify ownership
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller or campaign.seller_id != seller.id:
+    if not is_seller(current_user) or campaign.seller_id != get_seller_id(current_user):
         raise HTTPException(status_code=403, detail="Access denied")
     
     return campaign
@@ -369,8 +371,7 @@ def update_campaign(
         raise HTTPException(status_code=404, detail="Campaign not found")
     
     # Verify ownership
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller or campaign.seller_id != seller.id:
+    if not is_seller(current_user) or campaign.seller_id != get_seller_id(current_user):
         raise HTTPException(status_code=403, detail="Access denied")
     
     updated_campaign = crud.update_campaign(db, campaign_id, campaign_data)
@@ -395,8 +396,7 @@ def get_ad_analytics(
         raise HTTPException(status_code=404, detail="Ad not found")
     
     # Verify ownership
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller or ad.seller_id != seller.id:
+    if not is_seller(current_user) or ad.seller_id != get_seller_id(current_user):
         raise HTTPException(status_code=403, detail="Access denied")
     
     return crud.get_ad_analytics(db, ad_id, start_date, end_date)
@@ -416,8 +416,7 @@ def get_campaign_analytics(
         raise HTTPException(status_code=404, detail="Campaign not found")
     
     # Verify ownership
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller or campaign.seller_id != seller.id:
+    if not is_seller(current_user) or campaign.seller_id != get_seller_id(current_user):
         raise HTTPException(status_code=403, detail="Access denied")
     
     analytics = crud.get_campaign_analytics(db, campaign_id, start_date, end_date)
@@ -435,11 +434,10 @@ def get_ad_performance_summary(
     current_user: User = Depends(get_current_user)
 ):
     """Get overall ad performance summary for seller"""
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller:
+    if not is_seller(current_user):
         raise HTTPException(status_code=403, detail="Only sellers can view performance")
     
-    performance = crud.get_seller_ad_performance(db, seller.id, start_date, end_date)
+    performance = crud.get_seller_ad_performance(db, get_seller_id(current_user), start_date, end_date)
     if not performance:
         raise HTTPException(status_code=404, detail="Performance data not found")
     
@@ -673,8 +671,7 @@ def get_budget_summary(
         raise HTTPException(status_code=404, detail="Ad not found")
     
     # Verify ownership
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller or ad.seller_id != seller.id:
+    if not is_seller(current_user) or ad.seller_id != get_seller_id(current_user):
         raise HTTPException(status_code=403, detail="Access denied")
     
     budget_check = crud.check_budget_limits(db, ad_id)
@@ -705,8 +702,7 @@ def get_quality_score(
         raise HTTPException(status_code=404, detail="Ad not found")
     
     # Verify ownership
-    seller = get_seller_by_user_id(db, current_user.id)
-    if not seller or ad.seller_id != seller.id:
+    if not is_seller(current_user) or ad.seller_id != get_seller_id(current_user):
         raise HTTPException(status_code=403, detail="Access denied")
     
     quality_score = crud.calculate_quality_score(db, ad_id)

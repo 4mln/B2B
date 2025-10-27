@@ -11,7 +11,7 @@ class Cart(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)

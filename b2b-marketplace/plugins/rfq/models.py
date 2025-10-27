@@ -9,7 +9,7 @@ class RFQ(Base):
     __tablename__ = "rfqs"
 
     id = Column(Integer, primary_key=True, index=True)
-    buyer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    buyer_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     title = Column(String, nullable=False)
     specifications = Column(JSON, nullable=True)
     quantity = Column(Float, nullable=False)
@@ -30,7 +30,7 @@ class Quote(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     rfq_id = Column(Integer, ForeignKey("rfqs.id"), nullable=False)
-    seller_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    seller_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     price = Column(Float, nullable=False)
     terms = Column(String, nullable=True)
     attachments = Column(JSON, nullable=True)

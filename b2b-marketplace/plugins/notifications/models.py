@@ -96,7 +96,7 @@ class Notification(Base):
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
     
     # Recipient
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     
     # Notification details
     type = Column(String(50), nullable=False)
@@ -209,7 +209,7 @@ class UserNotificationPreference(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     
     # Notification type preferences
     notification_type = Column(String(50), nullable=False)
@@ -242,7 +242,7 @@ class NotificationSubscription(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     
     # Subscription details
     topic = Column(String(100), nullable=False)  # e.g., "new_products", "price_alerts"

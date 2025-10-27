@@ -28,9 +28,8 @@ from plugins.user.models import *
 from plugins.orders.models import *
 from plugins.products.models import *
 from plugins.ratings.models import *
-from plugins.buyer.models import *
 from plugins.payments.models import *
-from plugins.seller.models import Seller
+from app.models.user import User
 
 faker = Faker()
 
@@ -87,12 +86,24 @@ async def test_plugins_full_advanced_smoke():
             session.add(user)
             await session.flush()
 
-            seller = Seller(
-                name=faker.company(),
-                email=user.email,
-                phone=faker.phone_number(),
-                subscription="basic",
-                user_id=user.id
+            seller = User(
+                mobile_number=faker.phone_number(),
+                name=faker.first_name(),
+                last_name=faker.last_name(),
+                national_id=faker.random_number(digits=10),
+                username=faker.user_name(),
+                email=faker.email(),
+                hashed_password="hashed_password",
+                business_name=faker.company(),
+                business_description=faker.text(),
+                bank_accounts=[faker.iban()],
+                addresses=[faker.address()],
+                business_phones=[faker.phone_number()],
+                website=faker.url(),
+                whatsapp_id=faker.user_name(),
+                telegram_id=faker.user_name(),
+                role="seller",
+                is_active=True
             )
             session.add(seller)
             sellers_list.append(seller)

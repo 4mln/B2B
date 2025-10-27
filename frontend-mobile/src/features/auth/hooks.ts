@@ -36,14 +36,18 @@ export const useVerifyOTP = () => {
   return useMutation({
     mutationFn: authService.verifyOTP,
     onSuccess: async (response) => {
+      console.log('🔍 useVerifyOTP onSuccess:', response);
       if (response.success && response.data) {
         // Backend returns { access_token, token_type, user }
         await login(response.data.user, response.data.access_token);
         queryClient.invalidateQueries({ queryKey: ['profile'] });
+      } else {
+        console.error('🔍 useVerifyOTP: Response not successful:', response);
+        throw new Error(response.error || 'OTP verification failed');
       }
     },
     onError: (error: any) => {
-      console.error('Verify OTP error:', error);
+      console.error('🔍 useVerifyOTP onError:', error);
     },
   });
 };

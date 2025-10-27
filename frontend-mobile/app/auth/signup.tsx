@@ -122,11 +122,8 @@ export default function SignupScreen(props: SignupScreenProps) {
         // Mock data for development
         setTimeout(() => {
           setGuilds([
-            { id: '1', name: 'پزشکی' },
-            { id: '2', name: 'مهندسی' },
-            { id: '3', name: 'آموزش' },
-            { id: '4', name: 'فروشندگی' },
-            { id: '5', name: 'خدمات' },
+            { id: '1', name: 'الکتریک' },
+            { id: '2', name: 'ابزار' },
           ]);
           setIsLoadingGuilds(false);
         }, 1000);
@@ -524,7 +521,7 @@ export default function SignupScreen(props: SignupScreenProps) {
 
             {/* Footer */}
             <HStack 
-              marginTop={32} 
+              marginTop={-10} 
               justifyContent="center" 
               alignItems="center" 
               space={8}

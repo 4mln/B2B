@@ -40,7 +40,7 @@ class Payment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=True)
     amount = Column(Float, nullable=False)
     currency = Column(String, default="IRR")
@@ -92,7 +92,7 @@ class WithdrawalRequest(Base):
     __tablename__ = "withdrawal_requests"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     amount = Column(Float, nullable=False)
     currency = Column(String, default="IRR")
     bank_account = Column(JSON, nullable=False)

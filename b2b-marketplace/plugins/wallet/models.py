@@ -22,7 +22,7 @@ class Wallet(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     balance = Column(Float, default=0.0)
     currency = Column(String, default="IRR")
     currency_type = Column(Enum(CurrencyType), default=CurrencyType.FIAT)

@@ -16,7 +16,7 @@ class ChatRoom(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=True)  # For group chats
     chat_type = Column(String, nullable=False, default="direct")  # direct, group
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_by = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     is_active = Column(Boolean, default=True)
@@ -33,7 +33,7 @@ class ChatParticipant(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     chat_room_id = Column(Integer, ForeignKey("chat_rooms.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
     left_at = Column(DateTime(timezone=True), nullable=True)
     is_admin = Column(Boolean, default=False)  # For group chat admins
@@ -50,7 +50,7 @@ class Message(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     chat_room_id = Column(Integer, ForeignKey("chat_rooms.id"), nullable=False)
-    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    sender_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     content = Column(Text, nullable=False)
     message_type = Column(String, default="text")  # text, image, file, system
     extra_metadata = Column("metadata", JSON, nullable=True)  # For file info, etc.
@@ -73,7 +73,7 @@ class MessageReadStatus(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     message_id = Column(Integer, ForeignKey("messages.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     read_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
@@ -87,8 +87,8 @@ class ChatInvitation(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     chat_room_id = Column(Integer, ForeignKey("chat_rooms.id"), nullable=False)
-    invited_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    invited_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    invited_by = Column(Integer, ForeignKey("users_new.id"), nullable=False)
+    invited_user_id = Column(Integer, ForeignKey("users_new.id"), nullable=False)
     status = Column(String, default="pending")  # pending, accepted, declined
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     responded_at = Column(DateTime(timezone=True), nullable=True)

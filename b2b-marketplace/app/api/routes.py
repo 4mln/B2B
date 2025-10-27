@@ -18,7 +18,7 @@ def setup_api_routes(app):
     app.include_router(api_router)
     
     # Include new unified auth and user routes (disabled to avoid conflicts with plugin routes)
-    # app.include_router(new_auth_router, prefix="/api/v1")
+    app.include_router(new_auth_router, prefix="/api/v1")
     app.include_router(new_users_router, prefix="/api/v1")
     
     # Include legacy compatibility routes

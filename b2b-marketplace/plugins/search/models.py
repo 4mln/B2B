@@ -36,7 +36,7 @@ class SearchQuery(Base):
     query_text = Column(Text, nullable=False)
     search_type = Column(String(50), nullable=False)  # product, seller, etc.
     filters_applied = Column(JSON, nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=True)
     session_id = Column(String(255), nullable=True)
     
     # Results

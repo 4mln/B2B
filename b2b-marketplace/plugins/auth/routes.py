@@ -662,11 +662,58 @@ async def otp_verify(payload: OTPVerify, db: AsyncSession = Depends(get_db)):
     user.last_login = datetime.utcnow()
     await db.commit()
 
-    access_token = create_access_token(
-        data={"sub": user.email},
-        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+    # Create session record
+    from plugins.auth.models import UserSession
+    session = UserSession(
+        user_id=user.id, 
+        new_user_id=user.id if hasattr(user, 'id') and str(user.id).startswith('USR-') else None, 
+        user_agent="otp-verify", 
+        ip_address=None
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    db.add(session)
+    await db.commit()
+    await db.refresh(session)
+
+    # Issue token pair (access + refresh)
+    token_data = {"sub": user.email}
+    tokens = create_token_pair(token_data)
+
+    # Store refresh jti in Redis (best-effort)
+    try:
+        redis = await get_redis()
+        if redis:
+            payload = verify_token(tokens["refresh_token"], HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"))
+            jti = payload.get("jti")
+            exp = payload.get("exp")
+            if jti and exp:
+                ttl = int(exp - datetime.utcnow().timestamp())
+                if ttl > 0:
+                    await store_refresh_jti(redis, jti, user.email, ttl)
+    except Exception:
+        pass
+
+    # Return complete auth response matching frontend expectations
+    return {
+        "access_token": tokens["access_token"],
+        "refresh_token": tokens["refresh_token"],
+        "token_type": "bearer",
+        "expires_in": int(settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60),
+        "user": {
+            "id": str(user.id),
+            "phone": user.phone,
+            "name": user.full_name or user.username,
+            "email": user.email,
+            "avatar": getattr(user, 'avatar', None),
+            "isVerified": user.kyc_status == "otp_verified",
+            "createdAt": user.created_at.isoformat() if hasattr(user, 'created_at') and user.created_at else datetime.utcnow().isoformat(),
+            "updatedAt": user.updated_at.isoformat() if hasattr(user, 'updated_at') and user.updated_at else datetime.utcnow().isoformat(),
+        },
+        "device": {
+            "id": str(session.id),
+            "type": "mobile",
+            "name": "OTP Device"
+        }
+    }
 
 # -----------------------------
 # 2FA (TOTP)

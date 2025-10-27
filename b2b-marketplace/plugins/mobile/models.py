@@ -18,7 +18,7 @@ class MobileAppSession(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(String(255), unique=True, index=True, nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), nullable=True)
     device_id = Column(String(255), nullable=False)
     device_type = Column(String(50), nullable=False)  # ios, android, web
     app_version = Column(String(50), nullable=True)

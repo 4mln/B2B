@@ -157,33 +157,61 @@ except Exception as e:
     async def otp_request_fallback(payload: OTPRequest):
         return {"detail": "OTP request received", "phone": payload.phone, "is_signup": payload.is_signup}
     
+    @auth_fallback.post("/otp/verify")
+    async def otp_verify_fallback(payload: dict):
+        # Simple bypass for development
+        if payload.get("code") == "000000":
+            return {
+                "access_token": "bypass-access-token",
+                "refresh_token": "bypass-refresh-token",
+                "token_type": "bearer",
+                "expires_in": 900,  # 15 minutes
+                "user": {
+                    "id": "bypass-user",
+                    "phone": payload.get("phone", "unknown"),
+                    "name": "Bypass User",
+                    "email": f"{payload.get('phone', 'unknown')}@otp.local",
+                    "avatar": None,
+                    "isVerified": True,
+                    "createdAt": __import__('datetime').datetime.utcnow().isoformat(),
+                    "updatedAt": __import__('datetime').datetime.utcnow().isoformat(),
+                },
+                "device": {
+                    "id": "bypass-device",
+                    "type": "mobile",
+                    "name": "Bypass Device"
+                }
+            }
+        return {"detail": "Invalid OTP"}
+    
     app.include_router(auth_fallback, prefix="/auth", tags=["Auth"])
     app.include_router(auth_fallback, prefix="/api/v1/auth", tags=["Auth"])
     print("Loaded fallback auth routes")
 
 # Setup API routes (moved inside lifespan after plugin loading)
-# import sys
-# print(f"Python path: {sys.path}")
-# try:
-#     from app.api.routes import setup_api_routes
-#     setup_api_routes(app)
-# except ImportError as e:
-#     print(f"Error importing routes: {e}")
-#     # Try alternative import path
-#     try:
-#         import importlib.util
-#         spec = importlib.util.spec_from_file_location("routes", "/code/app/api/routes.py")
-#         routes_module = importlib.util.module_from_spec(spec)
-#         spec.loader.exec_module(routes_module)
-#         routes_module.setup_api_routes(app)
-#         print("Successfully loaded routes from alternative path")
-#     except Exception as e2:
-#         print(f"Failed alternative import: {e2}")
-#         # Create router directly as fallback
-#         from fastapi import APIRouter
-#         api_router = APIRouter(prefix="/api/v1")
-#         app.include_router(api_router)
-#         print("Created fallback API router")
+import sys
+print(f"Python path: {sys.path}")
+try:
+    from app.api.routes import setup_api_routes
+    setup_api_routes(app)
+    print("Successfully loaded API routes")
+except ImportError as e:
+    print(f"Error importing routes: {e}")
+    # Try alternative import path
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("routes", "/code/app/api/routes.py")
+        routes_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(routes_module)
+        routes_module.setup_api_routes(app)
+        print("Successfully loaded routes from alternative path")
+    except Exception as e2:
+        print(f"Failed alternative import: {e2}")
+        # Create router directly as fallback
+        from fastapi import APIRouter
+        api_router = APIRouter(prefix="/api/v1")
+        app.include_router(api_router)
+        print("Created fallback API router")
 
 
 # Configure CORS

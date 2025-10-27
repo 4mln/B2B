@@ -27,7 +27,7 @@ class UserBadge(Base):
     __tablename__ = "user_badges"
     __table_args__ = {"extend_existing": True}
 
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), primary_key=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
     badge_id = Column(Integer, ForeignKey("badges.id"), primary_key=True)
     awarded_at = Column(DateTime, default=datetime.utcnow)
@@ -42,7 +42,7 @@ class UserPoints(Base):
     __tablename__ = "user_points"
     __table_args__ = {"extend_existing": True}
 
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users_new.id"), primary_key=True)
     new_user_id = Column(UUID, ForeignKey("users_new.id"), nullable=True)
     points = Column(Integer, default=0)
     last_updated = Column(DateTime, default=datetime.utcnow)

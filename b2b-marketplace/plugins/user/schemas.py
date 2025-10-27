@@ -7,16 +7,6 @@ from typing import Optional, List, Any
 # fall back to `Any` so this module can be imported during test
 # collection without failing the whole test run.
 try:
-    from plugins.seller.schemas import SellerOut
-except Exception:
-    SellerOut = Any
-
-try:
-    from plugins.buyer.schemas import BuyerOut
-except Exception:
-    BuyerOut = Any
-
-try:
     from plugins.gamification.schemas import GamificationProgress
 except Exception:
     GamificationProgress = Any
@@ -41,8 +31,6 @@ class UserOut(UserBase):
     id: int
     # Use generic Any for optional plugin relations so this schema can be
     # imported even when those plugins are not installed or not loadable
-    sellers: List[Any] = []
-    buyer: Optional[Any] = None
     gamification: Optional[Any] = None
 
     model_config = {"from_attributes": True}
