@@ -39,7 +39,7 @@ export const useVerifyOTP = () => {
       console.log('🔍 useVerifyOTP onSuccess:', response);
       if (response.success && response.data) {
         // Backend returns { access_token, token_type, user }
-        await login(response.data.user, response.data.access_token);
+        await login(response.data.user, response.data.access_token, (response.data as any).refresh_token);
         queryClient.invalidateQueries({ queryKey: ['profile'] });
       } else {
         console.error('🔍 useVerifyOTP: Response not successful:', response);

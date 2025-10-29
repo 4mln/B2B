@@ -4,6 +4,7 @@ import { useAuthStore } from '@/features/auth/store';
 import i18n from '@/i18n';
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import uuid from 'react-native-uuid';
 
 // Create axios instance with production-grade configuration
 const normalizedPrefix = API_CONFIG.API_PREFIX?.startsWith('/') ? API_CONFIG.API_PREFIX : `/${API_CONFIG.API_PREFIX || ''}`;
@@ -18,6 +19,20 @@ const apiClient: AxiosInstance = axios.create({
   // Add retry configuration
   validateStatus: (status) => status < 500, // Don't throw on 4xx errors
 });
+
+// Local device id helper (avoid cross-module imports)
+const getOrCreateDeviceId = async (): Promise<string> => {
+  try {
+    let deviceId = await SecureStore.getItemAsync('device_id');
+    if (!deviceId) {
+      deviceId = uuid.v4() as string;
+      await SecureStore.setItemAsync('device_id', deviceId);
+    }
+    return deviceId;
+  } catch {
+    return uuid.v4() as string;
+  }
+};
 
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
@@ -68,8 +83,10 @@ apiClient.interceptors.response.use(
         const refreshToken = await SecureStore.getItemAsync('refresh_token');
         if (refreshToken) {
           const refreshUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.API_PREFIX}/auth/refresh`;
+          const deviceId = await getOrCreateDeviceId();
           const response = await axios.post(refreshUrl, {
             refresh_token: refreshToken,
+            device_id: deviceId,
           }, {
             timeout: 10000,  // Shorter timeout for refresh
           });

@@ -3,16 +3,24 @@ import { useThemeContext } from '@/components/ThemeProvider';
 import { useTheme as useTamaguiTheme } from 'tamagui';
 import { showErrorMessage, showInfoMessage, showWarningMessage, useMessageBoxStore } from '@/context/messageBoxStore';
 import { useAuth, useSendOTP, useVerifyOTP } from '@/features/auth/hooks';
+import { Controller, useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { validateIranianMobileNumber, validateIranianNationalId } from '@/utils/validation';
+import { ensureOnlineOrMessage } from '@/utils/connection';
+import { authService } from '@/services/auth';
+import DropDownPicker from 'react-native-dropdown-picker';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, Pressable, ScrollView, StatusBar, TextInput, PanResponder, Dimensions, Easing } from 'react-native';
-import { AnimatePresence, Stack as Box, Button, XStack as HStack, Spinner, Text, YStack as VStack } from 'tamagui';
+import { Animated, Pressable, ScrollView, StatusBar, TextInput, PanResponder, Dimensions, Easing, TouchableOpacity, Platform } from 'react-native';
+import AnimatedReanimated, { SlideInRight, SlideInLeft, SlideOutRight, SlideOutLeft } from 'react-native-reanimated';
+import { AnimatePresence, Stack as Box, Button, XStack as HStack, Spinner, Text, YStack as VStack, Input } from 'tamagui';
+import { colors } from '@/theme/colors';
 import { create } from 'zustand';
-import LoginScreen from '../../app/auth/login';
-import SignupScreen from '../../app/auth/signup';
+// Note: Do not import route screens here to avoid unintended mounting behind the wall
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -458,9 +466,12 @@ export const LoginWall: React.FC = () => {
   const { isVisible, setVisible } = useLoginWallStore();
   const [mode, setMode] = React.useState<'login' | 'signup' | 'otp'>('login');
   const [prevMode, setPrevMode] = React.useState<'login' | 'signup'>('login');
+  const [transitionDir, setTransitionDir] = React.useState<1 | -1>(1);
   const [pendingPhone, setPendingPhone] = React.useState<string | undefined>(undefined);
   const [loadingTimeoutExceeded, setLoadingTimeoutExceeded] = React.useState(false);
   const loginScreenRef = React.useRef<any>(null);
+  const isMobile = Platform.OS !== 'web';
+  const isFullscreen = isMobile;
 
   // Debug logging
   if (__DEV__) console.log('LoginWall - Auth State:', { approved, isLoading });
@@ -706,7 +717,13 @@ export const LoginWall: React.FC = () => {
   }
 
   const switchMode = (next: 'login' | 'signup' | 'otp') => {
-    // Switch mode immediately - AnimatePresence handles the animation
+    // Determine slide direction based on flow
+    // Forward (to otp) slides from right; backward (from otp) slides from left
+    const order = ['login', 'signup', 'otp'] as const;
+    const fromIdx = order.indexOf(mode as any);
+    const toIdx = order.indexOf(next as any);
+    const dir = toIdx > fromIdx ? 1 : -1;
+    setTransitionDir(dir);
     setMode(next);
   };
 
@@ -727,26 +744,28 @@ export const LoginWall: React.FC = () => {
       bottom={0}
       left={0}
       zIndex={9999}
-      // Semi-transparent backdrop that covers entire screen
+      // Backdrop that covers entire screen; lighter opacity while the underlying auth layout is routed away
       style={{
         pointerEvents: 'auto',
-        backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)',
+        backgroundColor: isDark ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)',
       }}
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />
-      <Box flex={1} justifyContent="center" alignItems="center" paddingHorizontal={16} pointerEvents="box-none" width="100%">
+      <Box flex={1} justifyContent={isFullscreen ? 'flex-start' : 'center'} alignItems="center" paddingHorizontal={isFullscreen ? 0 : 16} pointerEvents="box-none" width="100%">
         <Box
-          borderRadius={16}
+          borderRadius={isFullscreen ? 0 : 16}
           overflow="hidden"
-          maxHeight="90%"
+          maxHeight={isFullscreen ? '100%' : '90%'}
           data-login-wall-modal // 🆕 Identifier for focus trap
           // Dynamic width based on content with 10% padding and smooth animation
           style={{
             pointerEvents: 'auto',
-            backgroundColor: isDark ? 'rgba(11,11,11,0.98)' : 'rgba(255,255,255,0.98)',
-            width: 'auto',
-            maxWidth: '90%',
-            minWidth: '320px',
+            backgroundColor: isDark ? (isFullscreen ? '#0b0b0b' : 'rgba(11,11,11,0.98)') : (isFullscreen ? '#ffffff' : 'rgba(255,255,255,0.98)'),
+            width: isFullscreen ? '100%' : 380,
+            height: isFullscreen ? '100%' : undefined,
+            maxWidth: isFullscreen ? '100%' : '90%',
+            minWidth: isFullscreen ? '100%' : '320px',
+            minHeight: isFullscreen ? undefined : 520,
             alignSelf: 'center',
           }}
           animation="quick"
@@ -754,8 +773,8 @@ export const LoginWall: React.FC = () => {
           <ScrollView
             style={{ maxHeight: '100%', width: '100%' }}
             contentContainerStyle={{
-              paddingHorizontal: 20,
-              paddingVertical: 24,
+              paddingHorizontal: isFullscreen ? 16 : 20,
+              paddingVertical: isFullscreen ? 12 : 24,
               minHeight: '100%',
               alignItems: 'center'
             }}
@@ -763,112 +782,443 @@ export const LoginWall: React.FC = () => {
             nestedScrollEnabled
             showsVerticalScrollIndicator={false}
           >
-            <AnimatePresence>
-              {mode === 'login' && (
-                <Box
-                  key="login"
-                  animation="bouncy"
-                  enterStyle={{
-                    opacity: 0,
-                    scale: 0.8,
-                    y: 50
+            {mode === 'login' && (
+              <AnimatedReanimated.View
+                key="login"
+                entering={transitionDir === 1 ? SlideInRight.springify().damping(15).stiffness(150).duration(200) : SlideInLeft.springify().damping(15).stiffness(150).duration(200)}
+                exiting={transitionDir === 1 ? SlideOutLeft.duration(150) : SlideOutRight.duration(150)}
+              >
+                <InlineLogin
+                  initialPhone={pendingPhone}
+                  onNavigateToSignup={(phone) => {
+                    if (phone) setPendingPhone(phone);
+                    switchMode('signup');
                   }}
-                  exitStyle={{
-                    opacity: 0,
-                    scale: 0.8,
-                    y: 100
+                  onOtpRequested={(phone) => {
+                    setPrevMode('login');
+                    setPendingPhone(phone);
+                    switchMode('otp');
                   }}
-                >
-                  <LoginScreen
-                    ref={loginScreenRef}
-                    initialPhone={pendingPhone}
-                    onNavigateToSignup={(phone) => {
-                      if (phone) setPendingPhone(phone);
-                      switchMode('signup');
-                    }}
-                    onOtpRequested={async (phone) => {
-                      setPrevMode('login');
-                      setPendingPhone(phone);
-                      switchMode('otp');
-                    }}
-                  />
-                </Box>
-              )}
-              {mode === 'signup' && (
-                <Box
-                  key="signup"
-                  animation="bouncy"
-                  enterStyle={{
-                    opacity: 0,
-                    scale: 0.8,
-                    y: 50
+                />
+              </AnimatedReanimated.View>
+            )}
+            {mode === 'signup' && (
+              <AnimatedReanimated.View
+                key="signup"
+                entering={transitionDir === 1 ? SlideInRight.springify().damping(15).stiffness(150).duration(200) : SlideInLeft.springify().damping(15).stiffness(150).duration(200)}
+                exiting={transitionDir === 1 ? SlideOutLeft.duration(150) : SlideOutRight.duration(150)}
+              >
+                <InlineSignup
+                  initialPhone={pendingPhone}
+                  onNavigateToLogin={() => switchMode('login')}
+                  onOtpRequested={(phone) => {
+                    setPrevMode('signup');
+                    setPendingPhone(phone);
+                    switchMode('otp');
                   }}
-                  exitStyle={{
-                    opacity: 0,
-                    scale: 0.8,
-                    y: 100
+                />
+              </AnimatedReanimated.View>
+            )}
+            {mode === 'otp' && (
+              <AnimatedReanimated.View
+                key="otp"
+                entering={transitionDir === 1 ? SlideInRight.springify().damping(15).stiffness(150).duration(200) : SlideInLeft.springify().damping(15).stiffness(150).duration(200)}
+                exiting={transitionDir === 1 ? SlideOutLeft.duration(150) : SlideOutRight.duration(150)}
+              >
+                <InlineOtp
+                  phone={pendingPhone}
+                  origin={prevMode}
+                  onBack={() => switchMode(prevMode)}
+                  onSuccess={() => {
+                    if (prevMode === 'signup') {
+                      // Show congrats message, then go to login
+                      showInfoMessage(
+                        t('auth.signupCongratsLogin', 'Congrats! you signed up successfully, login now.'),
+                        [
+                          {
+                            label: t('auth.login', 'Login'),
+                            onPress: () => switchMode('login'),
+                          },
+                        ],
+                        t('auth.success', 'Success')
+                      );
+                    } else {
+                      // After login verification, proceed into the app
+                      try {
+                        router.replace('/(tabs)');
+                      } catch {}
+                    }
                   }}
-                >
-                  <SignupScreen
-                    embedded
-                    initialPhone={pendingPhone}
-                    onNavigateToLogin={() => switchMode('login')}
-                    onOtpRequested={async (phone) => {
-                      setPrevMode('signup');
-                      setPendingPhone(phone);
-                      switchMode('otp');
-                    }}
-                  />
-                </Box>
-              )}
-              {mode === 'otp' && (
-                <Box
-                  key="otp"
-                  animation="bouncy"
-                  enterStyle={{
-                    opacity: 0,
-                    scale: 0.8,
-                    y: 50
-                  }}
-                  exitStyle={{
-                    opacity: 0,
-                    scale: 0.8,
-                    y: 100
-                  }}
-                >
-                  <InlineOtp
-                    phone={pendingPhone}
-                    origin={prevMode}
-                    onBack={() => switchMode(prevMode)}
-                    onSuccess={() => {
-                      if (prevMode === 'signup') {
-                        // Show congrats message, then go to login
-                        showInfoMessage(
-                          t('auth.signupCongratsLogin', 'Congrats! you signed up successfully, login now.'),
-                          [
-                            {
-                              label: t('auth.login', 'Login'),
-                              onPress: () => switchMode('login'),
-                            },
-                          ],
-                          t('auth.success', 'Success')
-                        );
-                      } else {
-                        // After login verification, proceed into the app
-                        try {
-                          router.replace('/(tabs)');
-                        } catch {}
-                      }
-                    }}
-                  />
-                </Box>
-              )}
-            </AnimatePresence>
+                />
+              </AnimatedReanimated.View>
+            )}
           </ScrollView>
         </Box>
       </Box>
       <MessageBox />
     </Box>
+  );
+};
+
+type InlineLoginProps = {
+  initialPhone?: string;
+  onNavigateToSignup: (phone?: string) => void;
+  onOtpRequested: (phone: string) => void;
+};
+
+const InlineLogin: React.FC<InlineLoginProps> = ({ initialPhone, onNavigateToSignup, onOtpRequested }) => {
+  const { t } = useTranslation();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const sendOTPMutation = useSendOTP();
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const schema = yup.object({
+    phone: yup
+      .string()
+      .required(t('signup.errors.invalidPhone'))
+      .test('iran-phone', t('signup.errors.invalidPhone'), (value) => !!validateIranianMobileNumber(value || '').isValid),
+  });
+
+  const { control, handleSubmit, formState: { errors }, getValues, trigger, watch } = useForm<{ phone: string}>({
+    mode: 'onChange',
+    resolver: yupResolver(schema),
+    defaultValues: { phone: initialPhone || '' },
+  });
+
+  const watchedPhone = watch('phone');
+
+  const handleSend = async () => {
+    const { phone } = getValues();
+    const validation = validateIranianMobileNumber(phone);
+    if (!validation.isValid) {
+      await trigger('phone');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const online = await ensureOnlineOrMessage();
+      if (!online) return;
+      const userExistsResp = await authService.userExists(phone.trim());
+      if (!userExistsResp.success) {
+        useMessageBoxStore.getState().show({
+          type: 'error',
+          title: t('auth.error', 'Error'),
+          message: t('auth.checkUserFailed', 'Failed to check user existence. Please try again.'),
+          actions: [{ label: t('common.back') }]
+        });
+        return;
+      }
+      if (!userExistsResp.data?.exists) {
+        showInfoMessage(
+          t('auth.userNotFoundProceedSignup', 'User not found. Would you like to create an account?'),
+          [
+            { label: t('auth.signup', 'Signup'), onPress: () => onNavigateToSignup(phone.trim()) },
+            { label: t('common.cancel', 'Cancel'), onPress: () => {} },
+          ]
+        );
+        return;
+      }
+      const resp = await sendOTPMutation.mutateAsync({ phone: phone.trim() } as any);
+      if (resp?.success) {
+        onOtpRequested(phone.trim());
+      } else {
+        const msg = resp?.error || t('errors.networkErrorDetailed');
+        useMessageBoxStore.getState().show({ type: 'error', title: t('auth.error', 'Error'), message: msg, actions: [{ label: t('common.back') }] });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <VStack alignItems="center" space={24}>
+      <VStack alignItems="center" space="$lg">
+        <Box
+          width={80}
+          height={80}
+          borderRadius={40}
+          backgroundColor="$primary500"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Ionicons name="person" size={45} color="white" />
+        </Box>
+        <VStack alignItems="center" space="$sm">
+          <Text fontSize={35} textAlign="center" color={isDark ? '$textDark100' : '$textLight900'}>
+            {t('login.title')}
+          </Text>
+          <Box height={25} />
+          <Text textAlign="center" color={isDark ? '$textDark300' : '$textLight600'} fontSize="$md" fontWeight="$normal">
+            {t('login.subtitle')}
+          </Text>
+        </VStack>
+      </VStack>
+
+      <VStack space="$sm" width="100%" alignItems="center">
+        <Controller
+          control={control}
+          name="phone"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <Input
+              placeholder={t('login.phonePlaceholder')}
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              keyboardType="phone-pad"
+              autoFocus
+              height={38}
+              borderWidth={2}
+              borderColor={errors.phone ? '$error500' : (isDark ? '$borderLight300' : '$borderLight200')}
+              backgroundColor={isDark ? '$backgroundDark0' : '$backgroundLight0'}
+              borderRadius={12}
+              fontSize="$sm"
+              color={isDark ? '$textDark100' : '$textLight900'}
+              textAlign="center"
+              placeholderTextColor={isDark ? '$textDark400' : '$textLight500'}
+              width="60%"
+              alignSelf="center"
+            />
+          )}
+        />
+        {!!errors.phone?.message && (
+          <Text color="$error500" fontSize="$s" textAlign="center">{String(errors.phone.message)}</Text>
+        )}
+      </VStack>
+
+      <TouchableOpacity
+        style={{
+          backgroundColor: (!watchedPhone?.trim() || isLoading) ? colors.gray[300] : colors.primary[500],
+          borderRadius: 8,
+          paddingVertical: 10,
+          paddingHorizontal: 20,
+          alignItems: 'center',
+          marginTop: -20,
+          opacity: (!watchedPhone?.trim() || isLoading) ? 0.6 : 1,
+          minHeight: 30,
+          width: '55%',
+          height: 35,
+          alignSelf: 'center',
+        }}
+        onPress={handleSubmit(handleSend)}
+        disabled={isLoading}
+      >
+        <HStack alignItems="center" space="$sm">
+          {isLoading ? (
+            <Spinner color={colors.background.light} size="small" />
+          ) : (
+            <Ionicons name="phone-portrait-outline" color="#ffffff" size={18} />
+          )}
+          <Text fontSize="$s" fontWeight="$semibold" color={isDark ? '$textDark100' : '$textLight900'}>
+            {isLoading ? t('common.loading') : t('login.sendCode')}
+          </Text>
+        </HStack>
+      </TouchableOpacity>
+      <VStack alignItems="center" space="$sm" marginTop={8}>
+        <Text
+          fontSize="$s"
+          color={isDark ? '$textDark300' : '$textLight600'}
+          textAlign="center"
+          fontWeight="$normal"
+        >
+          {t('login.terms')}{' '}
+          <Text color="$primary500" fontWeight="$medium" textDecorationLine="underline">
+            {t('login.termsLink')}
+          </Text>{' '}
+          {t('login.and')}{' '}
+          <Text color="$primary500" fontWeight="$medium" textDecorationLine="underline">
+            {t('login.privacyLink')}
+          </Text>{' '}
+          {t('login.agree')}
+        </Text>
+      </VStack>
+    </VStack>
+  );
+};
+
+type InlineSignupProps = {
+  initialPhone?: string;
+  onNavigateToLogin: () => void;
+  onOtpRequested: (phone: string) => void;
+};
+
+const InlineSignup: React.FC<InlineSignupProps> = ({ initialPhone, onNavigateToLogin, onOtpRequested }) => {
+  const { t } = useTranslation();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoadingGuilds, setIsLoadingGuilds] = React.useState(true);
+  const [selectedGuild, setSelectedGuild] = React.useState('');
+  const [guildOpen, setGuildOpen] = React.useState(false);
+  const [guildItems, setGuildItems] = React.useState<{ label: string; value: string }[]>([]);
+  const sendOTPMutation = useSendOTP();
+  const messageBox = useMessageBoxStore();
+
+  type SignupFormValues = { firstName: string; lastName: string; nationalId: string; phone: string; guildId: string };
+  const schema = yup.object({
+    firstName: yup.string().required(t('signup.errors.firstNameTooShort')).min(2, t('signup.errors.firstNameTooShort')),
+    lastName: yup.string().required(t('signup.errors.firstNameTooShort')).min(2, t('signup.errors.firstNameTooShort')),
+    nationalId: yup.string().required(t('signup.errors.invalidNationalId')).length(10, t('signup.errors.invalidNationalId')).test('is-valid-nid', t('signup.errors.invalidNationalId'), (v) => validateIranianNationalId(String(v || ''))),
+    phone: yup.string().required(t('signup.errors.invalidPhone')).test('iran-phone', t('signup.errors.invalidPhone'), (value) => !!validateIranianMobileNumber(value || '').isValid),
+    guildId: yup.string().required(t('signup.errors.guildRequired')),
+  });
+
+  const { control, handleSubmit, formState: { errors }, getValues, setValue } = useForm<SignupFormValues>({
+    mode: 'onChange',
+    resolver: yupResolver(schema),
+    defaultValues: { firstName: '', lastName: '', nationalId: '', phone: initialPhone || '', guildId: '' },
+  });
+
+  React.useEffect(() => {
+    // Mock guilds
+    setTimeout(() => {
+      const mockGuilds = [ { label: 'الکتریک', value: '1' }, { label: 'ابزار', value: '2' } ];
+      setGuildItems(mockGuilds);
+      setIsLoadingGuilds(false);
+    }, 600);
+  }, []);
+
+  const handleSignup = async () => {
+    const { firstName, lastName, nationalId, phone, guildId } = getValues();
+    setIsLoading(true);
+    try {
+      const online = await ensureOnlineOrMessage();
+      if (!online) return;
+      const existsResp = await authService.phoneOrNationalIdExists(phone.trim(), nationalId.trim());
+      if (existsResp.success && existsResp.data?.exists) {
+        messageBox.show({ type: 'warning', title: t('auth.warning', 'Warning'), message: t('auth.idOrPhoneExists', 'This ID or phone number exists.'), actions: [{ label: t('common.back') }] });
+        return;
+      }
+      const resp = await authService.signup({ firstName: firstName.trim(), lastName: lastName.trim(), nationalId: nationalId.trim(), phone: phone.trim(), guildId: guildId || selectedGuild });
+      if (resp.success) {
+        try { await sendOTPMutation.mutateAsync({ phone: phone.trim(), is_signup: true } as any); } catch {}
+        onOtpRequested(phone.trim());
+      } else {
+        showErrorMessage(t('signup.alerts.signupFailed'));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <VStack alignItems="center" space={16}>
+      <VStack alignItems="center" space={8}>
+        <Box
+          width={72}
+          height={72}
+          borderRadius="$full"
+          backgroundColor="$primary100"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Ionicons name="person-add" color="#3b82f6" size={28} />
+        </Box>
+        <VStack alignItems="center" space={8}>
+          <Text fontSize="$xl" textAlign="center" color={isDark ? '$textDark100' : '$textLight900'}>
+            {t('signup.title')}
+          </Text>
+          <Text textAlign="center" color={isDark ? '$textDark300' : '$textLight600'} fontSize="$md" lineHeight="$lg" maxWidth={320}>
+            {t('signup.subtitle')}
+          </Text>
+        </VStack>
+      </VStack>
+      <HStack space={12} width="100%" justifyContent="center" paddingHorizontal={8}>
+        <VStack flex={1} space={8} maxWidth={160}>
+          <Controller control={control} name="firstName" render={({ field: { onChange, value } }) => (
+            <Input placeholder={t('signup.firstName')} value={value} onChangeText={onChange} height={35} textAlign="right" borderColor={errors.firstName ? '$error500' : (isDark ? '#2a2e39' : '#e2e8f0')} backgroundColor={isDark ? '#1f2937' : '#ffffff'} borderRadius="$xl" fontSize="$xs" color={isDark ? '#d1d4dc' : '#1e293b'} />
+          )} />
+          {!!errors.firstName?.message && <Text color="$error500" fontSize={13} textAlign="right">{String(errors.firstName.message)}</Text>}
+        </VStack>
+        <VStack flex={1} space={8} maxWidth={160}>
+          <Controller control={control} name="lastName" render={({ field: { onChange, value } }) => (
+            <Input placeholder={t('signup.lastName')} value={value} onChangeText={onChange} height={35} textAlign="right" borderColor={errors.lastName ? '$error500' : (isDark ? '#2a2e39' : '#e2e8f0')} backgroundColor={isDark ? '#1f2937' : '#ffffff'} borderRadius="$xl" fontSize="$sm" color={isDark ? '#d1d4dc' : '#1e293b'} />
+          )} />
+          {!!errors.lastName?.message && <Text color="$error500" fontSize={13} textAlign="right">{String(errors.lastName.message)}</Text>}
+        </VStack>
+      </HStack>
+      <VStack space={8} width="90%" alignSelf="center">
+        <Controller control={control} name="nationalId" render={({ field: { onChange, value } }) => (
+          <Input placeholder={t('signup.nationalIdPlaceholder')} keyboardType="number-pad" value={value} onChangeText={onChange} height={35} textAlign="right" borderColor={errors.nationalId ? '$error500' : (isDark ? '#2a2e39' : '#e2e8f0')} backgroundColor={isDark ? '#1f2937' : '#ffffff'} borderRadius="$xl" fontSize="$sm" color={isDark ? '#d1d4dc' : '#1e293b'} />
+        )} />
+        {!!errors.nationalId?.message && <Text color="$error500" fontSize={13} textAlign="right">{String(errors.nationalId.message)}</Text>}
+      </VStack>
+      <VStack space={8} width="90%" alignSelf="center">
+        <Controller control={control} name="phone" render={({ field: { onChange, value } }) => (
+          <Input placeholder={t('signup.phonePlaceholder')} keyboardType="phone-pad" value={value} onChangeText={onChange} height={35} textAlign="right" borderColor={errors.phone ? '$error500' : (isDark ? '#2a2e39' : '#e2e8f0')} backgroundColor={isDark ? '#1f2937' : '#ffffff'} borderRadius="$xl" fontSize="$sm" color={isDark ? '#d1d4dc' : '#1e293b'} />
+        )} />
+        {!!errors.phone?.message && <Text color="$error500" fontSize={13} textAlign="right">{String(errors.phone.message)}</Text>}
+      </VStack>
+      <VStack space={8} width="90%" alignSelf="center">
+        {isLoadingGuilds ? (
+          <HStack height={40} paddingHorizontal={16} borderWidth={1} borderColor="$borderLight300" borderRadius="$xl" alignItems="center" justifyContent="center" backgroundColor={isDark ? '$backgroundDark0' : '$backgroundLight0'}>
+            <Spinner size="small" color="$primary500" />
+            <Text marginLeft={12} color="$textLight600" fontSize="$md">{t('signup.loadingGuilds')}</Text>
+          </HStack>
+        ) : (
+          <DropDownPicker
+            open={guildOpen}
+            value={selectedGuild}
+            items={guildItems}
+            setOpen={setGuildOpen}
+            setValue={(callback) => {
+              const value = callback(selectedGuild);
+              setSelectedGuild(value as any);
+              setValue('guildId', value as any, { shouldValidate: true });
+            }}
+            setItems={setGuildItems}
+            placeholder={t('signup.selectGuild')}
+            searchable={true}
+            searchPlaceholder={t('signup.searchGuilds')}
+            style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderColor: errors.guildId ? '#ef4444' : (isDark ? '#2a2e39' : '#e2e8f0'), borderRadius: 16, minHeight: 35, height: 35 }}
+            dropDownContainerStyle={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderColor: isDark ? '#374151' : '#e5e7eb', borderRadius: 8, marginTop: 4 }}
+            textStyle={{ color: isDark ? '#d1d4dc' : '#1e293b', fontSize: 14, textAlign: 'right' }}
+            searchTextInputStyle={{ color: isDark ? '#d1d4dc' : '#1e293b', textAlign: 'right', borderColor: isDark ? '#374151' : '#e5e7eb' }}
+            searchContainerStyle={{ borderBottomColor: isDark ? '#374151' : '#e5e7eb', paddingBottom: 8 }}
+            listItemLabelStyle={{ color: isDark ? '#d1d4dc' : '#1e293b', textAlign: 'right' }}
+            disabled={isLoading}
+            zIndex={20000}
+            zIndexInverse={1000}
+          />
+        )}
+        {!!errors.guildId?.message && <Text color="$error500" fontSize={13} textAlign="right">{String(errors.guildId.message)}</Text>}
+      </VStack>
+      <TouchableOpacity
+        style={{
+          backgroundColor: (isLoading || isLoadingGuilds) ? colors.gray[300] : colors.primary[500],
+          borderRadius: 8,
+          paddingVertical: 8,
+          paddingHorizontal: 16,
+          alignItems: 'center',
+          marginTop: 20,
+          opacity: (isLoading || isLoadingGuilds) ? 0.6 : 1,
+          minHeight: 36,
+          maxWidth: 200,
+          alignSelf: 'center',
+        }}
+        onPress={handleSubmit(handleSignup)}
+        disabled={isLoading || isLoadingGuilds}
+      >
+        <HStack alignItems="center" space={8}>
+          {isLoading ? (
+            <Spinner color={colors.background.light} size="small" />
+          ) : (
+            <Ionicons name="checkmark-circle" color="#ffffff" size={18} />
+          )}
+          <Text fontSize={14} fontWeight="$semibold" color={colors.background.light}>
+            {isLoading ? t('common.loading') : t('signup.submit')}
+          </Text>
+        </HStack>
+      </TouchableOpacity>
+      <HStack marginTop={-10} justifyContent="center" alignItems="center" space={8} paddingHorizontal={16}>
+        <Text color="$textLight600" fontSize="$md">{t('signup.haveAccount')}</Text>
+        <Pressable onPress={onNavigateToLogin}>
+          <Text color="$primary500" fontSize="$md" fontWeight="$semibold" textDecorationLine="underline">
+            {t('signup.login')}
+          </Text>
+        </Pressable>
+      </HStack>
+    </VStack>
   );
 };
 
@@ -953,13 +1303,32 @@ const InlineOtp: React.FC<InlineOtpProps> = ({ phone, origin = 'login', onBack, 
   }, []);
 
   const handleOtpChange = (value: string, index: number) => {
-    // keep only one numeric digit
-    const digitOnly = value.replace(/\D/g, '').slice(0, 1);
+    const onlyDigits = String(value || '').replace(/\D/g, '');
+    // Paste case: multiple digits entered at once → distribute LTR starting from current index
+    if (onlyDigits.length > 1) {
+      const next = [...otp];
+      let writeIndex = index;
+      for (let i = 0; i < onlyDigits.length && writeIndex < 6; i++, writeIndex++) {
+        next[writeIndex] = onlyDigits[i];
+      }
+      setOtp(next);
+      // focus next empty or the last filled index
+      const firstEmpty = next.findIndex((d) => d === '');
+      const focusTo = firstEmpty === -1 ? Math.min(writeIndex, 5) : firstEmpty;
+      inputRefs.current[focusTo]?.focus();
+      if (next.every((d) => d !== '') && next.join('').length === 6) {
+        handleVerify(next.join(''));
+      }
+      return;
+    }
+
+    // Single digit entry
+    const digitOnly = onlyDigits.slice(0, 1);
     const next = [...otp];
     next[index] = digitOnly;
     setOtp(next);
     if (digitOnly && index < 5) inputRefs.current[index + 1]?.focus();
-    if (next.every(d => d !== '') && next.join('').length === 6) {
+    if (next.every((d) => d !== '') && next.join('').length === 6) {
       handleVerify(next.join(''));
     }
   };
@@ -1064,7 +1433,7 @@ const InlineOtp: React.FC<InlineOtpProps> = ({ phone, origin = 'login', onBack, 
         </VStack>
       </VStack>
 
-      <HStack justifyContent="space-between" marginBottom={20} space={12}>
+      <HStack justifyContent="space-between" marginBottom={20} space={12} style={{ direction: 'ltr' }}>
         {otp.map((digit, index) => (
           <TextInput
             key={index}
@@ -1087,11 +1456,25 @@ const InlineOtp: React.FC<InlineOtpProps> = ({ phone, origin = 'login', onBack, 
             onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
             keyboardType="number-pad"
             inputMode="numeric"
-            maxLength={1}
             selectTextOnFocus
             caretHidden={false}
             importantForAutofill="yes"
             textContentType="oneTimeCode"
+            // Web paste handler: distribute pasted text LTR across inputs
+            {...(Platform.OS === 'web' ? {
+              onPaste: (e: any) => {
+                try {
+                  const clip = e?.nativeEvent?.clipboardData?.getData?.('text') || e?.clipboardData?.getData?.('text') || '';
+                  if (clip) {
+                    e.preventDefault?.();
+                    const digits = String(clip).replace(/\D/g, '');
+                    if (digits) {
+                      handleOtpChange(digits, index);
+                    }
+                  }
+                } catch {}
+              },
+            } : {})}
             accessible
             accessibilityLabel={`${t('otp.digit', 'OTP digit')} ${index + 1}`}
           />

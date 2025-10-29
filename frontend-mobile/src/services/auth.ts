@@ -110,8 +110,10 @@ const getDeviceName = (): string => {
 // Token storage utilities
 const storeTokens = async (tokens: { access_token: string; refresh_token: string }): Promise<void> => {
   try {
-    await SecureStore.setItemAsync('access_token', tokens.access_token);
+    // Standardize on auth_token/refresh_token; also mirror access_token for backward compatibility
+    await SecureStore.setItemAsync('auth_token', tokens.access_token);
     await SecureStore.setItemAsync('refresh_token', tokens.refresh_token);
+    try { await SecureStore.setItemAsync('access_token', tokens.access_token); } catch {}
   } catch (error) {
     console.error('Failed to store tokens:', error);
   }
@@ -167,10 +169,10 @@ export const authService = {
     console.log('❌ BYPASS: OTP bypass is disabled, making real API call');
     
     try {
-      // Use plugin auth endpoint
-      const response = await apiClient.post('/api/v1/auth/otp/request', {
+      // v2 endpoint with device binding
+      const response = await apiClient.post('/auth/request-otp', {
         phone: data.phone,
-        is_signup: true
+        device_id: deviceId
       });
       return {
         data: response.data,
@@ -205,10 +207,13 @@ export const authService = {
         console.log('✅ BYPASS VERIFY: Code length is 6, making real API call with bypass OTP');
         
         try {
-          // Make a real API call with the bypass OTP code "000000"
-          const response = await apiClient.post('/api/v1/auth/otp/verify', {
+          // Make a real API call to v2 with the bypass OTP code "000000"
+          const response = await apiClient.post('/auth/verify-otp', {
             phone: data.phone,
-            code: '000000' // Use the bypass code
+            otp_code: '000000',
+            device_id: deviceId,
+            device_type: deviceType,
+            device_name: deviceName
           });
           
           // Store tokens securely
@@ -274,9 +279,12 @@ export const authService = {
     // Normal OTP verification flow (only runs if bypass is disabled)
     console.log('❌ BYPASS VERIFY: OTP bypass is disabled, making real API call');
     try {
-      const response = await apiClient.post('/api/v1/auth/otp/verify', {
+      const response = await apiClient.post('/auth/verify-otp', {
         phone: data.phone,
-        code: data.otp
+        otp_code: data.otp,
+        device_id: deviceId,
+        device_type: deviceType,
+        device_name: deviceName
       });
       
       // Store tokens securely
@@ -402,7 +410,7 @@ export const authService = {
    */
   async getProfile(): Promise<ApiResponse<AuthResponse['user']>> {
     try {
-      const response = await apiClient.get('/users/profile');
+      const response = await apiClient.get('/users/me/profile');
       return {
         data: response.data,
         success: true,
@@ -420,7 +428,7 @@ export const authService = {
    */
   async getCurrentUser(): Promise<ApiResponse<AuthResponse['user']>> {
     try {
-      const response = await apiClient.get('/users/profile');
+      const response = await apiClient.get('/users/me/profile');
       return {
         data: response.data,
         success: true,
@@ -438,7 +446,7 @@ export const authService = {
    */
   async updateProfile(data: UpdateProfileRequest): Promise<ApiResponse<AuthResponse['user']>> {
     try {
-      const response = await apiClient.patch('/users/profile', data);
+      const response = await apiClient.patch('/users/me/profile', data);
       return {
         data: response.data,
         success: true,

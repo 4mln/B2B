@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { PortalProvider } from '@tamagui/portal';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, usePathname, router } from 'expo-router';
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import 'react-native-reanimated';
@@ -25,7 +25,7 @@ if (typeof globalThis.cancelAnimationFrame === 'undefined') {
 
 import { ConnectionBanner } from '../src/components/ConnectionBanner';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
-import { BackgroundLock, LoginWall, ThemeSwitcher } from '../src/components/LoginWall';
+import { BackgroundLock, LoginWall, ThemeSwitcher, useLoginWallStore } from '../src/components/LoginWall';
 import { useAuth } from '../src/features/auth/hooks';
 import { useAuthStore } from '../src/features/auth/store';
 import { useColorScheme } from '../src/hooks/use-color-scheme';
@@ -88,6 +88,19 @@ export default function RootLayout() {
 function InnerLayout() {
   const { isDark } = useThemeContext();
   const { isLoading } = useAuth();
+  const { isVisible } = useLoginWallStore();
+  const pathname = usePathname();
+
+  // If the login wall is visible, avoid showing any /auth/* screens behind it
+  // Redirect to a neutral route so the underlying layout isn't duplicated
+  useEffect(() => {
+    if (!pathname) return;
+    if (isVisible && pathname.startsWith('/auth')) {
+      try {
+        router.replace('/');
+      } catch {}
+    }
+  }, [isVisible, pathname]);
 
   return (
     <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>

@@ -15,10 +15,10 @@ pass:zxcve4423s
 bordun@fwfw.app		**
 pass:cxzxe32.2
 
-claudia@selenium39.me
+claudia@selenium39.me	**
 pass:cxfr4r302.3
 
-omar@flowable.me
+omar@flowable.me	**
 pass:lporoy509*
 
 david@selenium39.me

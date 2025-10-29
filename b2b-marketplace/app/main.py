@@ -78,6 +78,13 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             print(f"[startup] configure_mappers warning: {e}")
         loader = PluginLoader()
+        # Disable legacy auth plugin to enforce v2 routes only
+        try:
+            if not hasattr(app.state, 'plugin_config') or not isinstance(getattr(app.state, 'plugin_config'), dict):
+                app.state.plugin_config = {}
+            app.state.plugin_config.update({ 'auth': { 'enabled': False } })
+        except Exception:
+            pass
         await loader.load_all(app, engine)
         if settings.ENABLE_PLUGIN_HOT_RELOAD:
             loader.enable_hot_reload(app, engine)
@@ -171,58 +178,7 @@ except Exception:
     # Plugin may be optional during early startup
     pass
 
-# Include auth routes directly (temporary fix for plugin loading issue)
-try:
-    from plugins.auth.routes import router as auth_router
-    app.include_router(auth_router, prefix="/auth", tags=["Auth"])
-    app.include_router(auth_router, prefix="/api/v1/auth", tags=["Auth"])
-    print("Successfully loaded auth routes directly")
-except Exception as e:
-    print(f"Error loading auth routes: {e}")
-    # Fallback: create minimal auth routes
-    from fastapi import APIRouter
-    from pydantic import BaseModel
-    
-    class OTPRequest(BaseModel):
-        phone: str
-        is_signup: bool = False
-    
-    auth_fallback = APIRouter()
-    
-    @auth_fallback.post("/otp/request")
-    async def otp_request_fallback(payload: OTPRequest):
-        return {"detail": "OTP request received", "phone": payload.phone, "is_signup": payload.is_signup}
-    
-    @auth_fallback.post("/otp/verify")
-    async def otp_verify_fallback(payload: dict):
-        # Simple bypass for development
-        if payload.get("code") == "000000":
-            return {
-                "access_token": "bypass-access-token",
-                "refresh_token": "bypass-refresh-token",
-                "token_type": "bearer",
-                "expires_in": 900,  # 15 minutes
-                "user": {
-                    "id": "bypass-user",
-                    "phone": payload.get("phone", "unknown"),
-                    "name": "Bypass User",
-                    "email": f"{payload.get('phone', 'unknown')}@otp.local",
-                    "avatar": None,
-                    "isVerified": True,
-                    "createdAt": __import__('datetime').datetime.utcnow().isoformat(),
-                    "updatedAt": __import__('datetime').datetime.utcnow().isoformat(),
-                },
-                "device": {
-                    "id": "bypass-device",
-                    "type": "mobile",
-                    "name": "Bypass Device"
-                }
-            }
-        return {"detail": "Invalid OTP"}
-    
-    app.include_router(auth_fallback, prefix="/auth", tags=["Auth"])
-    app.include_router(auth_fallback, prefix="/api/v1/auth", tags=["Auth"])
-    print("Loaded fallback auth routes")
+# Remove legacy plugin auth mounts in favor of v2 (mounted via setup_api_routes)
 
 # Setup API routes (moved inside lifespan after plugin loading)
 import sys
