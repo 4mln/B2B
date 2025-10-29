@@ -16,7 +16,7 @@ class AnalyticsEvent(Base):
     event_data = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    user = relationship("User")
+    user = relationship("User", foreign_keys=[user_id])
     # Minimal stubs to satisfy imports in CRUD/routes
 class BusinessMetrics(Base):
     __tablename__ = "business_metrics"

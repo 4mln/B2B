@@ -23,12 +23,8 @@ class WalletPlugin(Plugin):
         app.include_router(self.router)
     
     async def init_db(self, engine) -> None:
-        """Initialize database tables and seed initial data."""
-        from app.db.session import get_db_sync
-        from .seeders.currencies import seed_supported_currencies
-
-        async with get_db_sync() as db:
-            await seed_supported_currencies(db)
+        """Skip wallet DB seeding during plugin init to avoid premature ORM mapping."""
+        return None
     
     async def on_startup(self, app: FastAPI) -> None:
         """Perform any startup tasks for the wallet plugin."""

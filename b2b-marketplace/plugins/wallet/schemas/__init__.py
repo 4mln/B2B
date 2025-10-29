@@ -1,16 +1,21 @@
+# Re-export schema classes for convenient imports like `from plugins.wallet.schemas import WalletCreate`
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
+
 
 class WalletBase(BaseModel):
     currency: str
     currency_type: str = "fiat"  # fiat or crypto
 
+
 class WalletCreate(WalletBase):
     user_id: int
 
+
 class WalletUpdate(BaseModel):
     is_active: Optional[bool] = None
+
 
 class WalletOut(WalletBase):
     id: int
@@ -21,8 +26,9 @@ class WalletOut(WalletBase):
     updated_at: datetime
 
     model_config = ConfigDict(
-        from_attributes = True
+        from_attributes=True
     )
+
 
 class TransactionBase(BaseModel):
     amount: float
@@ -30,11 +36,14 @@ class TransactionBase(BaseModel):
     reference: Optional[str] = None
     description: Optional[str] = None
 
+
 class TransactionCreate(TransactionBase):
     wallet_id: int
 
+
 class TransactionUpdate(BaseModel):
     status: Optional[str] = None
+
 
 class TransactionOut(TransactionBase):
     id: int
@@ -43,29 +52,38 @@ class TransactionOut(TransactionBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
 
 class DepositRequest(BaseModel):
     amount: float = Field(..., gt=0)
     currency: str
 
+
 class WithdrawalRequest(BaseModel):
     amount: float = Field(..., gt=0)
     currency: str
+
 
 class TransferRequest(BaseModel):
     amount: float = Field(..., gt=0)
     currency: str
     recipient_id: int
 
+
 class WalletBalance(BaseModel):
     currency: str
     balance: float
     currency_type: str
 
+
 class UserWallets(BaseModel):
     user_id: int
     wallets: List[WalletBalance]
 
-    
+
+# Also make analytics submodule available (e.g., plugins.wallet.schemas.analytics)
+from . import analytics  # noqa: F401
+

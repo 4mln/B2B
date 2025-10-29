@@ -6,6 +6,12 @@ from typing import List, Optional
 from .models import Wallet, Transaction, CurrencyType, TransactionType
 from .schemas import WalletCreate, WalletUpdate, TransactionCreate, TransactionUpdate
 
+# Provide access to analytics submodule via this module namespace
+try:
+    from .crud import analytics as analytics  # type: ignore
+except Exception:
+    analytics = None  # fallback if submodule unavailable at import time
+
 # Wallet CRUD operations
 async def create_wallet(db: AsyncSession, wallet: WalletCreate) -> Wallet:
     db_wallet = Wallet(
@@ -26,7 +32,7 @@ async def get_user_wallets(db: AsyncSession, user_id: int, new_user_id: str = No
     result = await db.execute(select(Wallet).where(Wallet.new_user_id == new_user_id if new_user_id else Wallet.user_id == user_id))
     return result.scalars().all()
 
-async def get_user_wallet_by_currency(db: AsyncSession, user_id: int, currency: str) -> Optional[Wallet]:
+async def get_user_wallet_by_currency(db: AsyncSession, user_id: int, currency: str, new_user_id: Optional[str] = None) -> Optional[Wallet]:
     result = await db.execute(
         select(Wallet).where(
             and_(

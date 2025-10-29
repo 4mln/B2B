@@ -1,9 +1,9 @@
 """Wallet plugin models for analytics and currency data."""
-from sqlalchemy import Column, String, Float, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from app.db.base_class import Base
+from app.db.base import Base
 
 class SupportedCurrency(Base):
     __tablename__ = "supported_currencies"
@@ -31,9 +31,7 @@ class ExchangeRate(Base):
 class WalletAnalytics(Base):
     __tablename__ = "wallet_analytics"
 
-    wallet_id = Column(String, ForeignKey("wallets.id"), primary_key=True)
+    wallet_id = Column(Integer, ForeignKey("wallets.id"), primary_key=True)
     daily_stats = Column(JSON)  # Daily transaction stats
     monthly_stats = Column(JSON)  # Monthly aggregates
     last_updated = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    wallet = relationship("Wallet", back_populates="analytics")

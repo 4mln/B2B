@@ -7,12 +7,11 @@ from plugins.products.models import Product
 from plugins.orders.__init__ import Plugin  # to get max_orders_per_user
 from typing import List, Optional, Dict
 
-async def create_order(db: AsyncSession, order: OrderCreate, buyer_id: int, new_buyer_id: str = None):
+async def create_order(db: AsyncSession, order: OrderCreate, buyer_id: int, new_buyer_id: Optional[str] = None):
     # Validate max orders per user
     max_orders = Plugin.config.max_orders_per_user
-    existing_count = await db.scalar(
-        select(func.count()).select_from(Order).where(Order.new_buyer_id == new_buyer_id if new_buyer_id else Order.new_buyer_id == new_buyer_id if new_buyer_id else Order.buyer_id == buyer_id)
-    )
+    where_clause = Order.new_buyer_id == new_buyer_id if new_buyer_id else Order.buyer_id == buyer_id
+    existing_count = await db.scalar(select(func.count()).select_from(Order).where(where_clause))
     if existing_count >= max_orders:
         raise ValueError(f"Buyer has reached the maximum number of orders: {max_orders}")
 
@@ -52,16 +51,17 @@ async def create_order(db: AsyncSession, order: OrderCreate, buyer_id: int, new_
     return db_order
 
 
-async def get_order(db: AsyncSession, order_id: int, buyer_id: int, new_buyer_id: str = None: Optional[int] = None):
+async def get_order(db: AsyncSession, order_id: int, buyer_id: int, new_buyer_id: Optional[str] = None):
     query = select(Order).where(Order.id == order_id)
     if buyer_id:
-        query = query.where(Order.new_buyer_id == new_buyer_id if new_buyer_id else Order.new_buyer_id == new_buyer_id if new_buyer_id else Order.buyer_id == buyer_id)
+        where_clause = Order.new_buyer_id == new_buyer_id if new_buyer_id else Order.buyer_id == buyer_id
+        query = query.where(where_clause)
     result = await db.execute(query)
     return result.scalar_one_or_none()
 
 
-async def update_order(db: AsyncSession, order_id: int, buyer_id: int, new_buyer_id: str = None: Optional[int] = None):
-    db_order = await get_order(db, order_id, buyer_id)
+async def update_order(db: AsyncSession, order_id: int, order_data: OrderUpdate, buyer_id: int, new_buyer_id: Optional[str] = None):
+    db_order = await get_order(db, order_id, buyer_id, new_buyer_id)
     if not db_order:
         return None
 
@@ -84,8 +84,8 @@ async def update_order(db: AsyncSession, order_id: int, buyer_id: int, new_buyer
     return db_order
 
 
-async def delete_order(db: AsyncSession, order_id: int, buyer_id: int, new_buyer_id: str = None: Optional[int] = None):
-    db_order = await get_order(db, order_id, buyer_id)
+async def delete_order(db: AsyncSession, order_id: int, buyer_id: int, new_buyer_id: Optional[str] = None):
+    db_order = await get_order(db, order_id, buyer_id, new_buyer_id)
     if not db_order:
         return False
     await db.delete(db_order)
@@ -96,15 +96,19 @@ async def delete_order(db: AsyncSession, order_id: int, buyer_id: int, new_buyer
 async def list_orders(
     db: AsyncSession,
     buyer_id: Optional[int] = None,
+    new_buyer_id: Optional[str] = None,
     seller_id: Optional[int] = None,
+    new_seller_id: Optional[str] = None,
     skip: int = 0,
-    limit: int = 50
+    limit: int = 50,
 ):
     query = select(Order)
-    if buyer_id:
-        query = query.where(Order.new_buyer_id == new_buyer_id if new_buyer_id else Order.new_buyer_id == new_buyer_id if new_buyer_id else Order.buyer_id == buyer_id)
-    if seller_id:
-        query = query.where(Order.new_seller_id == new_seller_id if new_seller_id else Order.new_seller_id == new_seller_id if new_seller_id else Order.seller_id == seller_id)
+    if buyer_id is not None:
+        where_clause = Order.new_buyer_id == new_buyer_id if new_buyer_id else Order.buyer_id == buyer_id
+        query = query.where(where_clause)
+    if seller_id is not None:
+        where_clause_seller = Order.new_seller_id == new_seller_id if new_seller_id else Order.seller_id == seller_id
+        query = query.where(where_clause_seller)
     query = query.offset(skip).limit(limit)
     result = await db.execute(query)
     return result.scalars().all()

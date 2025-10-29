@@ -18,6 +18,10 @@ except Exception:
     async def get_redis_connection():
         return None
 
+# Backwards-compatible alias expected by plugins
+async def get_redis():
+    return await get_redis_connection()
+
 
 def _jti_key(jti: str) -> str:
     return f"refresh_jti:{jti}"

@@ -3,175 +3,71 @@ Mobile API Optimization Routes
 FastAPI endpoints for mobile-optimized API functionality
 """
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, BackgroundTasks
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
-from app.core.legacy_adapter import resolve_legacy_user
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 from fastapi.responses import JSONResponse
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 from sqlalchemy.orm import Session
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 from typing import List, Optional
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 from datetime import datetime, timedelta
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 import json
 import time
 
-from app.core.auth import get_current_user_sync as get_current_user, get_current_user_optional_sync as get_current_user_optional
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
+from app.core.auth import (
+    get_current_user_sync as get_current_user,
+    get_current_user_optional_sync as get_current_user_optional,
+)
 from plugins.auth.models import User
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 from . import crud
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
-from .schemas import MobileDeviceCreate, MobileDeviceOut, MobileNotificationSettings
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
-    MobileAppSessionCreate, MobileAppSessionUpdate, MobileAppSessionOut,
-    MobileAPICallCreate, MobileAPICallOut, APICacheCreate, APICacheUpdate, APICacheOut,
-    MobileAppConfigCreate, MobileAppConfigUpdate, MobileAppConfigOut,
-    MobileFeatureFlagCreate, MobileFeatureFlagUpdate, MobileFeatureFlagOut,
-    MobilePerformanceMetricCreate, MobilePerformanceMetricOut,
-    MobileOfflineQueueCreate, MobileOfflineQueueUpdate, MobileOfflineQueueOut,
-    MobilePushNotificationCreate, MobilePushNotificationUpdate, MobilePushNotificationOut,
-    MobileSyncStateCreate, MobileSyncStateUpdate, MobileSyncStateOut,
-    MobileAPIAnalytics, MobilePerformanceSummary, MobileOfflineQueueSummary,
-    MobilePushNotificationSummary, MobileHealthCheck, CacheRequest, CacheResponse,
-    FeatureFlagRequest, FeatureFlagResponse, SyncRequest, SyncResponse,
-    MobileSessionRequest, MobileSessionResponse, PerformanceMetricRequest,
-    OfflineActionRequest, PushNotificationRequest, MobileAppSessionListResponse,
-    MobileAPICallListResponse, APICacheListResponse, MobileAppConfigListResponse,
-    MobileFeatureFlagListResponse, MobilePerformanceMetricListResponse,
-    MobileOfflineQueueListResponse, MobilePushNotificationListResponse,
-    MobileSyncStateListResponse, MobileOptimizationConfig
+from .schemas import (
+    MobileAppSessionCreate,
+    MobileAppSessionUpdate,
+    MobileAppSessionOut,
+    MobileAPICallCreate,
+    MobileAPICallOut,
+    APICacheCreate,
+    APICacheUpdate,
+    APICacheOut,
+    MobileAppConfigCreate,
+    MobileAppConfigUpdate,
+    MobileAppConfigOut,
+    MobileFeatureFlagCreate,
+    MobileFeatureFlagUpdate,
+    MobileFeatureFlagOut,
+    MobilePerformanceMetricCreate,
+    MobilePerformanceMetricOut,
+    MobileOfflineQueueCreate,
+    MobileOfflineQueueUpdate,
+    MobileOfflineQueueOut,
+    MobilePushNotificationCreate,
+    MobilePushNotificationUpdate,
+    MobilePushNotificationOut,
+    MobileSyncStateCreate,
+    MobileSyncStateUpdate,
+    MobileSyncStateOut,
+    MobileAPIAnalytics,
+    MobilePerformanceSummary,
+    MobileOfflineQueueSummary,
+    MobilePushNotificationSummary,
+    MobileHealthCheck,
+    CacheRequest,
+    CacheResponse,
+    FeatureFlagRequest,
+    FeatureFlagResponse,
+    SyncRequest,
+    SyncResponse,
+    MobileSessionRequest,
+    MobileSessionResponse,
+    PerformanceMetricRequest,
+    OfflineActionRequest,
+    PushNotificationRequest,
+    MobileAppSessionListResponse,
+    MobileAPICallListResponse,
+    APICacheListResponse,
+    MobileAppConfigListResponse,
+    MobileFeatureFlagListResponse,
+    MobilePerformanceMetricListResponse,
+    MobileOfflineQueueListResponse,
+    MobilePushNotificationListResponse,
+    MobileSyncStateListResponse,
+    MobileOptimizationConfig,
 )
 
 router = APIRouter(prefix="/mobile", tags=["mobile"])
@@ -180,20 +76,6 @@ router = APIRouter(prefix="/mobile", tags=["mobile"])
 # Lazy generator-style DB dependency to avoid circular imports
 def db_dep():
     from app.db.session import get_db_sync
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
     yield from get_db_sync()
 
 

@@ -17,8 +17,8 @@ class AuthToken(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    # Use simple relationship to avoid requiring back_populates on User model
-    user = relationship("User")
+    # Link explicitly to User.tokens to avoid reverse_property confusion with User.sessions
+    user = relationship("User", back_populates="tokens", foreign_keys=[user_id], overlaps="sessions")
 
 
 class UserSession(Base):
@@ -40,7 +40,7 @@ class UserSession(Base):
     login_provider = Column(String(50), nullable=True)  # google, facebook, etc.
     session_metadata = Column(String, nullable=True)  # JSON string for metadata
 
-    user = relationship("User")
+    user = relationship("User", back_populates="sessions", foreign_keys=[user_id], overlaps="tokens")
 
 
 class UserProfileChange(Base):

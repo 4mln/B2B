@@ -1,171 +1,44 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_session as get_db
-from plugins.analytics.schemas import AnalyticsEventIn, AnalyticsEventOut
-from plugins.analytics.crud import create_event, list_events
-
-router = APIRouter()
-
-
-@router.post("/analytics/events", response_model=AnalyticsEventOut)
-async def post_event(payload: AnalyticsEventIn, db: AsyncSession = Depends(get_db)):
-    ev = await create_event(db, payload.event_type, payload.event_data or {})
-    return AnalyticsEventOut(id=ev.id, event_type=ev.event_type, event_data=ev.event_data, created_at=str(ev.created_at))
-
-
-@router.get("/analytics/events")
-async def get_events(db: AsyncSession = Depends(get_db), limit: int = 50):
-    rows = await list_events(db, limit=limit)
-    return [dict(r) for r in rows]
 """
 Analytics & Reporting System Routes
 FastAPI endpoints for comprehensive business intelligence and reporting
 """
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
-from app.core.legacy_adapter import resolve_legacy_user
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 from sqlalchemy.orm import Session
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 from typing import List, Optional
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 from datetime import datetime, timedelta
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 import json
 
 from app.core.auth import get_current_user_sync as get_current_user
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 from plugins.auth.models import User
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 from . import crud
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
 from .schemas import (
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
-    AnalyticsEventCreate, AnalyticsEventOut, BusinessMetricsOut, UserAnalyticsOut,
-    SellerAnalyticsOut, ProductAnalyticsOut, FinancialReportOut, PerformanceMetricsOut,
-    ReportTemplateCreate, ReportTemplateUpdate, ReportTemplateOut,
-    ScheduledReportCreate, ScheduledReportUpdate, ScheduledReportOut,
-    ReportExecutionOut, DashboardCreate, DashboardUpdate, DashboardOut,
-    DataExportCreate, DataExportOut, AnalyticsQueryRequest, AnalyticsQueryResponse,
-    BusinessMetricsSummary, PerformanceSummary, ReportGenerationRequest,
-    ReportGenerationResponse, RealTimeMetrics, AnalyticsRequest, AnalyticsResponse
+    AnalyticsEventCreate,
+    AnalyticsEventOut,
+    BusinessMetricsOut,
+    UserAnalyticsOut,
+    SellerAnalyticsOut,
+    ProductAnalyticsOut,
+    FinancialReportOut,
+    PerformanceMetricsOut,
+    ReportTemplateCreate,
+    ReportTemplateUpdate,
+    ReportTemplateOut,
+    ScheduledReportCreate,
+    ScheduledReportUpdate,
+    ScheduledReportOut,
+    ReportExecutionOut,
+    DashboardCreate,
+    DashboardUpdate,
+    DashboardOut,
+    DataExportCreate,
+    DataExportOut,
+    AnalyticsQueryRequest,
+    AnalyticsQueryResponse,
+    BusinessMetricsSummary,
+    PerformanceSummary,
+    ReportGenerationRequest,
+    ReportGenerationResponse,
+    RealTimeMetrics,
 )
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -174,20 +47,6 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
 # Lazy generator-style DB dependency to avoid circular imports
 def db_dep():
     from app.db.session import get_db_sync
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
     yield from get_db_sync()
 
 
@@ -651,20 +510,7 @@ def track_event(
 ):
     """Track an analytics event"""
     from .models import AnalyticsEventType
-
-def resolve_user_id(user):
-    """Resolve user ID for both legacy and new user models"""
-    if hasattr(user, 'id'):
-        # Check if it's a new user ID (UUID format)
-        if str(user.id).startswith('USR-'):
-            return user.id, user.id
-        else:
-            # Legacy user ID, need to resolve new user ID
-            # This would typically query the legacy_mapping table
-            # For now, return the legacy ID and None for new ID
-            return user.id, None
-    return None, None
-
+    
     
     try:
         event_type_enum = AnalyticsEventType(event_type)

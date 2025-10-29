@@ -116,7 +116,7 @@ class Ad(Base):
     last_served_at = Column(DateTime(timezone=True), nullable=True)
     
     # Relationships
-    seller = relationship("User", back_populates="ads")
+    seller = relationship("User", back_populates="ads", foreign_keys=[seller_id])
     impressions_log = relationship("AdImpression", back_populates="ad")
     clicks_log = relationship("AdClick", back_populates="ad")
     conversions_log = relationship("AdConversion", back_populates="ad")
@@ -154,7 +154,7 @@ class AdCampaign(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    seller = relationship("User", back_populates="ad_campaigns")
+    seller = relationship("User", back_populates="ad_campaigns", foreign_keys=[seller_id])
     ads = relationship("Ad", back_populates="campaign")
 
 
@@ -186,7 +186,7 @@ class AdImpression(Base):
     
     # Relationships
     ad = relationship("Ad", back_populates="impressions_log")
-    user = relationship("User")
+    user = relationship("User", foreign_keys=[user_id])
 
 
 class AdClick(Base):
@@ -220,7 +220,7 @@ class AdClick(Base):
     # Relationships
     ad = relationship("Ad", back_populates="clicks_log")
     impression = relationship("AdImpression")
-    user = relationship("User")
+    user = relationship("User", foreign_keys=[user_id])
 
 
 class AdConversion(Base):
@@ -244,7 +244,7 @@ class AdConversion(Base):
     # Relationships
     ad = relationship("Ad", back_populates="conversions_log")
     click = relationship("AdClick")
-    user = relationship("User")
+    user = relationship("User", foreign_keys=[user_id])
     order = relationship("Order")
 
 
@@ -325,7 +325,7 @@ class AdBlocklist(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    seller = relationship("User")
+    seller = relationship("User", foreign_keys=[seller_id])
 class AdAnalytics(Base):
     """Aggregated ad analytics"""
     __tablename__ = "ad_analytics"

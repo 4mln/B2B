@@ -21,6 +21,7 @@ from app.core.security_docs import apply_security_requirements, add_security_exa
 from fastapi.responses import JSONResponse
 from fastapi import Request
 from contextlib import asynccontextmanager
+from sqlalchemy.orm import configure_mappers
 
 # Observability imports (optional)
 try:
@@ -41,6 +42,41 @@ except Exception:
 async def lifespan(app: FastAPI):
     # Startup: initialize services and load plugins
     try:
+        # Load core models before any plugin loads (User, Device, etc.)
+        try:
+            from app.db.base import load_core_models
+            load_core_models()
+        except Exception as e:
+            print(f"[startup] load_core_models skipped or failed: {e}")
+
+        # Optionally import plugin models that are known dependencies before mapping
+        # (Keep minimal to avoid cross-plugin coupling.)
+        try:
+            import plugins.products.models  # Ensure Product exists for string relations
+        except Exception:
+            pass
+        try:
+            import plugins.orders.models  # Ensure Order exists for User relationships
+        except Exception:
+            pass
+        try:
+            import plugins.ratings.models  # Ensure Rating exists for User relationships
+        except Exception:
+            pass
+        try:
+            import plugins.ads.models  # Ensure Ad exists for User relationships
+        except Exception:
+            pass
+        try:
+            import plugins.payments.models  # Ensure Payment exists for Order relationships
+        except Exception:
+            pass
+
+        # Finalize mapper configurations after all known models are imported
+        try:
+            configure_mappers()
+        except Exception as e:
+            print(f"[startup] configure_mappers warning: {e}")
         loader = PluginLoader()
         await loader.load_all(app, engine)
         if settings.ENABLE_PLUGIN_HOT_RELOAD:

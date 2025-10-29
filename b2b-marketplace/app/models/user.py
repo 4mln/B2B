@@ -70,7 +70,8 @@ class User(Base):
 
     # Relationships - using string references to avoid circular imports
     devices = relationship("Device", back_populates="user", cascade="all, delete-orphan")
-    sessions = relationship("UserSession", cascade="all, delete-orphan")
+    sessions = relationship("UserSession", cascade="all, delete-orphan", back_populates="user")
+    tokens = relationship("AuthToken", cascade="all, delete-orphan", back_populates="user")
     
     # Order relationships
     buyer_orders = relationship("Order", foreign_keys="Order.buyer_id", back_populates="buyer")
@@ -83,9 +84,9 @@ class User(Base):
     ratings_given = relationship("Rating", foreign_keys="Rating.rater_id", back_populates="rater")
     ratings_received = relationship("Rating", foreign_keys="Rating.ratee_id", back_populates="ratee")
     
-    # Ad relationships (as seller)
-    ads = relationship("Ad", back_populates="seller")
-    ad_campaigns = relationship("AdCampaign", back_populates="seller")
+    # Ad relationships (as seller) - disambiguate multiple FKs to users_new
+    ads = relationship("Ad", back_populates="seller", foreign_keys="Ad.seller_id")
+    ad_campaigns = relationship("AdCampaign", back_populates="seller", foreign_keys="AdCampaign.seller_id")
 
     __table_args__ = (
         CheckConstraint("rating >= 0 AND rating <= 5", name="chk_user_rating_range"),
