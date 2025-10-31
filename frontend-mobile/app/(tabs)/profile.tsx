@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, View as Box, Image, Pressable, ScrollView, Switch } from 'react-native';
+import { Alert, View as Box, Image, Pressable, ScrollView, Switch, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { XStack as HStack, Text, YStack as VStack } from 'tamagui';
 

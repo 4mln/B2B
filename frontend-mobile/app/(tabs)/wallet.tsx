@@ -51,7 +51,7 @@ export default function WalletScreen() {
 
   // Hooks
   const { data: balanceData, refetch: refetchBalance } = useWalletBalance();
-  const { transactions, isLoading } = useWalletStore();
+  const { transactions = [], isLoading } = useWalletStore();
   const { refetch: refetchTransactions } = useTransactions();
   const topUp = useTopUp();
   const withdraw = useWithdraw();
@@ -393,7 +393,7 @@ export default function WalletScreen() {
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>{t('wallet.currentBalance', 'Current Balance')}</Text>
           <Text style={styles.balanceAmount}>
-            {(balanceData?.balance ?? 0).toLocaleString()} {balanceData?.currency || 'Toman'}
+            {(balanceData?.balance ?? 0).toLocaleString()} {(balanceData as any)?.currency || 'Toman'}
           </Text>
           
           <View style={styles.actionButtons}>

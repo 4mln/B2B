@@ -472,6 +472,59 @@ export const LoginWall: React.FC = () => {
   const loginScreenRef = React.useRef<any>(null);
   const isMobile = Platform.OS !== 'web';
   const isFullscreen = isMobile;
+  const sendOTPMutation = useSendOTP();
+
+  // State to persist signup form data
+  const [signupFormData, setSignupFormData] = React.useState<{
+    firstName: string;
+    lastName: string;
+    nationalId: string;
+    phone: string;
+    guildId: string;
+  }>({
+    firstName: '',
+    lastName: '',
+    nationalId: '',
+    phone: '',
+    guildId: ''
+  });
+
+  // OTP timer state - moved to parent to persist across mode changes
+  const [otpTimeLeft, setOtpTimeLeft] = React.useState(0);
+  const [otpCanResend, setOtpCanResend] = React.useState(false);
+
+  // OTP timer effect
+  React.useEffect(() => {
+    if (otpTimeLeft > 0) {
+      const timer = setTimeout(() => setOtpTimeLeft(otpTimeLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (otpTimeLeft === 0 && !otpCanResend) {
+      setOtpCanResend(true);
+    }
+  }, [otpTimeLeft, otpCanResend]);
+
+  // Auto-send OTP when entering OTP mode for the first time
+  React.useEffect(() => {
+    if (mode === 'otp' && pendingPhone && otpTimeLeft === 0) {
+      // Start the timer and send OTP
+      setOtpTimeLeft(60);
+      setOtpCanResend(false);
+
+      // Send OTP automatically
+      const sendInitialOTP = async () => {
+        try {
+          await sendOTPMutation.mutateAsync({
+            phone: pendingPhone.trim(),
+            is_signup: prevMode === 'signup'
+          } as any);
+        } catch (error) {
+          console.error('Failed to auto-send OTP:', error);
+        }
+      };
+
+      sendInitialOTP();
+    }
+  }, [mode, pendingPhone, otpTimeLeft, prevMode, sendOTPMutation]);
 
   // Debug logging
   if (__DEV__) console.log('LoginWall - Auth State:', { approved, isLoading });
@@ -810,10 +863,17 @@ export const LoginWall: React.FC = () => {
               >
                 <InlineSignup
                   initialPhone={pendingPhone}
+                  initialFirstName={signupFormData.firstName}
+                  initialLastName={signupFormData.lastName}
+                  initialNationalId={signupFormData.nationalId}
+                  initialGuildId={signupFormData.guildId}
                   onNavigateToLogin={() => switchMode('login')}
-                  onOtpRequested={(phone) => {
+                  onOtpRequested={(phone, formData) => {
                     setPrevMode('signup');
                     setPendingPhone(phone);
+                    if (formData) {
+                      setSignupFormData(formData);
+                    }
                     switchMode('otp');
                   }}
                 />
@@ -828,7 +888,13 @@ export const LoginWall: React.FC = () => {
                 <InlineOtp
                   phone={pendingPhone}
                   origin={prevMode}
+                  timeLeft={otpTimeLeft}
+                  canResend={otpCanResend}
                   onBack={() => switchMode(prevMode)}
+                  onResendStart={() => {
+                    setOtpTimeLeft(60);
+                    setOtpCanResend(false);
+                  }}
                   onSuccess={() => {
                     if (prevMode === 'signup') {
                       // Show congrats message, then go to login
@@ -872,6 +938,14 @@ const InlineLogin: React.FC<InlineLoginProps> = ({ initialPhone, onNavigateToSig
   const isDark = colorScheme === 'dark';
   const sendOTPMutation = useSendOTP();
   const [isLoading, setIsLoading] = React.useState(false);
+  const phoneInputRef = React.useRef<TextInput>(null);
+
+  // Focus phone input when component mounts
+  React.useEffect(() => {
+    setTimeout(() => {
+      phoneInputRef.current?.focus();
+    }, 100);
+  }, []);
 
   const schema = yup.object({
     phone: yup
@@ -961,12 +1035,12 @@ const InlineLogin: React.FC<InlineLoginProps> = ({ initialPhone, onNavigateToSig
           name="phone"
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
+              ref={phoneInputRef}
               placeholder={t('login.phonePlaceholder')}
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
               keyboardType="phone-pad"
-              autoFocus
               height={38}
               borderWidth={2}
               borderColor={errors.phone ? '$error500' : (isDark ? '$borderLight300' : '$borderLight200')}
@@ -1038,17 +1112,29 @@ const InlineLogin: React.FC<InlineLoginProps> = ({ initialPhone, onNavigateToSig
 
 type InlineSignupProps = {
   initialPhone?: string;
+  initialFirstName?: string;
+  initialLastName?: string;
+  initialNationalId?: string;
+  initialGuildId?: string;
   onNavigateToLogin: () => void;
-  onOtpRequested: (phone: string) => void;
+  onOtpRequested: (phone: string, formData?: { firstName: string; lastName: string; nationalId: string; phone: string; guildId: string }) => void;
 };
 
-const InlineSignup: React.FC<InlineSignupProps> = ({ initialPhone, onNavigateToLogin, onOtpRequested }) => {
+const InlineSignup: React.FC<InlineSignupProps> = ({
+  initialPhone,
+  initialFirstName = '',
+  initialLastName = '',
+  initialNationalId = '',
+  initialGuildId = '',
+  onNavigateToLogin,
+  onOtpRequested
+}) => {
   const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const [isLoading, setIsLoading] = React.useState(false);
   const [isLoadingGuilds, setIsLoadingGuilds] = React.useState(true);
-  const [selectedGuild, setSelectedGuild] = React.useState('');
+  const [selectedGuild, setSelectedGuild] = React.useState(initialGuildId || '');
   const [guildOpen, setGuildOpen] = React.useState(false);
   const [guildItems, setGuildItems] = React.useState<{ label: string; value: string }[]>([]);
   const sendOTPMutation = useSendOTP();
@@ -1066,7 +1152,13 @@ const InlineSignup: React.FC<InlineSignupProps> = ({ initialPhone, onNavigateToL
   const { control, handleSubmit, formState: { errors }, getValues, setValue } = useForm<SignupFormValues>({
     mode: 'onChange',
     resolver: yupResolver(schema),
-    defaultValues: { firstName: '', lastName: '', nationalId: '', phone: initialPhone || '', guildId: '' },
+    defaultValues: {
+      firstName: initialFirstName,
+      lastName: initialLastName,
+      nationalId: initialNationalId,
+      phone: initialPhone || '',
+      guildId: initialGuildId
+    },
   });
 
   React.useEffect(() => {
@@ -1092,7 +1184,7 @@ const InlineSignup: React.FC<InlineSignupProps> = ({ initialPhone, onNavigateToL
       const resp = await authService.signup({ firstName: firstName.trim(), lastName: lastName.trim(), nationalId: nationalId.trim(), phone: phone.trim(), guildId: guildId || selectedGuild });
       if (resp.success) {
         try { await sendOTPMutation.mutateAsync({ phone: phone.trim(), is_signup: true } as any); } catch {}
-        onOtpRequested(phone.trim());
+        onOtpRequested(phone.trim(), { firstName, lastName, nationalId, phone, guildId: guildId || selectedGuild });
       } else {
         showErrorMessage(t('signup.alerts.signupFailed'));
       }
@@ -1270,36 +1362,44 @@ export const useNavigationGuard = () => {
 type InlineOtpProps = {
   phone?: string;
   origin?: 'signup' | 'login';
+  timeLeft?: number;
+  canResend?: boolean;
   onBack: () => void;
+  onResendStart?: () => void;
   onSuccess: () => void;
 };
 
-const InlineOtp: React.FC<InlineOtpProps> = ({ phone, origin = 'login', onBack, onSuccess }) => {
+const InlineOtp: React.FC<InlineOtpProps> = ({
+  phone,
+  origin = 'login',
+  timeLeft: externalTimeLeft,
+  canResend: externalCanResend,
+  onBack,
+  onResendStart,
+  onSuccess
+}) => {
   const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const [otp, setOtp] = React.useState<string[]>(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [timeLeft, setTimeLeft] = React.useState(60);
-  const [canResend, setCanResend] = React.useState(false);
   const inputRefs = React.useRef<TextInput[]>([]);
   const verifyOTPMutation = useVerifyOTP();
   const messageBox = useMessageBoxStore();
   const sendOTPMutation = useSendOTP();
   const [isResending, setIsResending] = React.useState(false);
 
-  React.useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setCanResend(true);
-    }
-  }, [timeLeft]);
+  // Use external timer state if provided, otherwise use local state
+  const timeLeft = externalTimeLeft !== undefined ? externalTimeLeft : 60;
+  const canResend = externalCanResend !== undefined ? externalCanResend : false;
 
   // Focus first input on mount
   React.useEffect(() => {
-    inputRefs.current[0]?.focus();
+    // Add a small delay to ensure the component is fully rendered
+    const timer = setTimeout(() => {
+      inputRefs.current[0]?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleOtpChange = (value: string, index: number) => {
@@ -1367,8 +1467,8 @@ const InlineOtp: React.FC<InlineOtpProps> = ({ phone, origin = 'login', onBack, 
     setIsResending(true);
     try {
       await sendOTPMutation.mutateAsync({ phone: String(phone).trim(), is_signup: origin === 'signup' } as any);
-      setTimeLeft(60);
-      setCanResend(false);
+      // Notify parent to reset timer
+      onResendStart?.();
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
       messageBox.show({
@@ -1422,13 +1522,19 @@ const InlineOtp: React.FC<InlineOtpProps> = ({ phone, origin = 'login', onBack, 
           <Text fontSize="$lg" fontWeight="$bold" color="$textLight900" textAlign="center">
             {t('otp.title', 'Enter Authentication Code')}
           </Text>
-          <Text fontSize="$sm" fontWeight="$normal" color="$textLight600" textAlign="center">
+          <Text fontSize="$md" fontWeight="$normal" color="$textLight600" textAlign="center">
             {t('otp.sentTo', 'Sent to:')}
           </Text>
           {!!phone && (
-            <Text fontSize="$sm" color="$primary500" fontWeight="$semibold">
-              +98 {phone}
-            </Text>
+            <HStack alignItems="center" space="$sm">
+
+              <Text fontSize="$md" color="$primary500" fontWeight="$semibold" writingDirection="ltr">
+                {phone}
+              </Text>
+                            <Text fontSize="$md" color="$primary500" fontWeight="$semibold" writingDirection="ltr">
+                98+
+              </Text>
+            </HStack>
           )}
         </VStack>
       </VStack>
@@ -1510,10 +1616,10 @@ const InlineOtp: React.FC<InlineOtpProps> = ({ phone, origin = 'login', onBack, 
           </Pressable>
         ) : (
           <VStack alignItems="center" space={4}>
-            <Text color="$textLight600" fontSize="$sm">
+            <Text color="$textLight600" fontSize="$md">
               {t('auth.otpNotReceived', "Didn't receive the code?")}
             </Text>
-            <Text color="$primary500" fontWeight="$semibold" fontSize="$md">
+            <Text color="$primary500" fontWeight="$semibold" fontSize="$lg">
               {formatTime(timeLeft)}
             </Text>
           </VStack>
