@@ -49,12 +49,12 @@ export default function HomeScreen() {
 
   // Mock data
   const guilds: Guild[] = [
-    { id: '1', name: 'Construction', icon: 'construct', productCount: 245 },
-    { id: '2', name: 'Electronics', icon: 'hardware-chip', productCount: 189 },
-    { id: '3', name: 'Textiles', icon: 'shirt', productCount: 156 },
-    { id: '4', name: 'Food & Beverage', icon: 'restaurant', productCount: 98 },
-    { id: '5', name: 'Automotive', icon: 'car', productCount: 134 },
-    { id: '6', name: 'Chemicals', icon: 'flask', productCount: 87 },
+    { id: '1', name: t('categories.Construction', 'Construction'), icon: 'construct', productCount: 245 },
+    { id: '2', name: t('categories.Electronics', 'Electronics'), icon: 'hardware-chip', productCount: 189 },
+    { id: '3', name: t('categories.Textiles', 'Textiles'), icon: 'shirt', productCount: 156 },
+    { id: '4', name: t('categories.Food & Beverage', 'Food & Beverage'), icon: 'restaurant', productCount: 98 },
+    { id: '5', name: t('categories.Automotive', 'Automotive'), icon: 'car', productCount: 134 },
+    { id: '6', name: t('categories.Chemicals', 'Chemicals'), icon: 'flask', productCount: 87 },
   ];
 
   const recommendedProducts: Product[] = [

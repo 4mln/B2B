@@ -1,6 +1,7 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   StyleSheet,
   Text,
@@ -29,6 +30,7 @@ export const GuildCard: React.FC<GuildCardProps> = ({
   onPress,
   isSelected = false,
 }) => {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -99,7 +101,7 @@ export const GuildCard: React.FC<GuildCardProps> = ({
         {name}
       </Text>
       <Text style={styles.productCount}>
-        {productCount} products
+        {productCount} {t('home.products', 'products')}
       </Text>
     </TouchableOpacity>
   );

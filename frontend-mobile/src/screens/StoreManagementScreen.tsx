@@ -3,10 +3,12 @@ import { StoreForm } from '@/components/StoreForm';
 import { useStoreCapabilities, useStores } from '@/features/stores/hooks';
 import { Store } from '@/features/stores/types';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, View as Box, FlatList, Pressable, RefreshControl } from 'react-native';
 import { XStack as HStack, Text, YStack as VStack } from 'tamagui';
 
 export const StoreManagementScreen: React.FC = () => {
+  const { t } = useTranslation();
   const {
     stores,
     isLoading,
@@ -40,9 +42,9 @@ export const StoreManagementScreen: React.FC = () => {
     try {
       await createStore(data);
       setShowCreateForm(false);
-      Alert.alert('Success', 'Store created successfully');
+      Alert.alert(t('messageBox.success', 'Success'), t('stores.storeCreated', 'Store created successfully'));
     } catch (error) {
-      Alert.alert('Error', 'Failed to create store');
+      Alert.alert(t('messageBox.error', 'Error'), t('stores.createFailed', 'Failed to create store'));
     }
   };
 
@@ -52,9 +54,9 @@ export const StoreManagementScreen: React.FC = () => {
     try {
       await updateStore(editingStore.id, data);
       setEditingStore(null);
-      Alert.alert('Success', 'Store updated successfully');
+      Alert.alert(t('messageBox.success', 'Success'), t('stores.storeUpdated', 'Store updated successfully'));
     } catch (error) {
-      Alert.alert('Error', 'Failed to update store');
+      Alert.alert(t('messageBox.error', 'Error'), t('stores.updateFailed', 'Failed to update store'));
     }
   };
 
@@ -62,11 +64,11 @@ export const StoreManagementScreen: React.FC = () => {
     try {
       await toggleStoreStatus(store.id, isActive);
       Alert.alert(
-        'Success',
-        `Store ${isActive ? 'activated' : 'deactivated'} successfully`
+        t('messageBox.success', 'Success'),
+        isActive ? t('stores.storeActivated', 'Store activated successfully') : t('stores.storeDeactivated', 'Store deactivated successfully')
       );
     } catch (error) {
-      Alert.alert('Error', 'Failed to update store status');
+      Alert.alert(t('messageBox.error', 'Error'), t('stores.statusUpdateFailed', 'Failed to update store status'));
     }
   };
 
@@ -80,10 +82,10 @@ export const StoreManagementScreen: React.FC = () => {
       <Box flex={1} backgroundColor="$backgroundLight0">
         <VStack flex={1} justifyContent="center" alignItems="center" padding={32}>
           <Text fontSize={24} fontWeight="$bold" color="$textLight900" marginBottom={8}>
-            Store Management
+            {t('stores.storeManagement', 'Store Management')}
           </Text>
           <Text fontSize={16} color="$textLight600" textAlign="center">
-            You don't have permission to manage stores.
+            {t('stores.noPermission', "You don't have permission to manage stores.")}
           </Text>
         </VStack>
       </Box>
@@ -116,7 +118,7 @@ export const StoreManagementScreen: React.FC = () => {
     <Box flex={1} backgroundColor="$backgroundLight0">
       <HStack justifyContent="space-between" alignItems="center" padding={16} borderBottomWidth={1} borderBottomColor="$borderLight200">
         <Text fontSize={24} fontWeight="$bold" color="$textLight900">
-          My Stores
+          {t('stores.myStores', 'My Stores')}
         </Text>
         <Pressable
           backgroundColor="$primary500"
@@ -126,7 +128,7 @@ export const StoreManagementScreen: React.FC = () => {
           onPress={() => setShowCreateForm(true)}
         >
           <Text color="$white" fontWeight="$semibold">
-            Create Store
+            {t('stores.createStore', 'Create Store')}
           </Text>
         </Pressable>
       </HStack>
@@ -149,7 +151,7 @@ export const StoreManagementScreen: React.FC = () => {
               }}
             >
               <Text color="$white" fontWeight="$semibold">
-                Retry
+                {t('common.retry', 'Retry')}
               </Text>
             </Pressable>
           </Box>
@@ -158,10 +160,10 @@ export const StoreManagementScreen: React.FC = () => {
         {stores.length === 0 && !isLoading && !error ? (
           <VStack flex={1} justifyContent="center" alignItems="center" padding={32}>
             <Text fontSize={20} fontWeight="$bold" color="$textLight900" marginBottom={8}>
-              No Stores Yet
+              {t('stores.noStores', 'No Stores Yet')}
             </Text>
             <Text fontSize={16} color="$textLight600" textAlign="center" marginBottom={24}>
-              Create your first store to start selling products
+              {t('stores.createFirstStore', 'Create your first store to start selling products')}
             </Text>
             <Pressable
               backgroundColor="$primary500"
@@ -171,7 +173,7 @@ export const StoreManagementScreen: React.FC = () => {
               onPress={() => setShowCreateForm(true)}
             >
               <Text color="$white" fontWeight="$semibold">
-                Create Your First Store
+                {t('stores.createStore', 'Create Store')}
               </Text>
             </Pressable>
           </VStack>

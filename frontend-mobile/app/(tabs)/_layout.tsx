@@ -51,6 +51,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: t('navigation.home'),
+          tabBarLabel: t('navigation.home'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               name={focused ? 'home' : 'home-outline'} 
@@ -64,6 +65,7 @@ export default function TabLayout() {
         name="search"
         options={{
           title: t('navigation.search'),
+          tabBarLabel: t('navigation.search'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               name={focused ? 'search' : 'search-outline'} 
@@ -78,6 +80,7 @@ export default function TabLayout() {
           name="add"
           options={{
             title: t('navigation.add'),
+            tabBarLabel: t('navigation.add'),
             tabBarIcon: ({ color, focused }) => (
               <Ionicons 
                 name={focused ? 'add-circle' : 'add-circle-outline'} 
@@ -92,6 +95,7 @@ export default function TabLayout() {
         name="chat"
         options={{
           title: t('navigation.chat'),
+          tabBarLabel: t('navigation.chat'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               name={focused ? 'chatbubbles' : 'chatbubbles-outline'} 
@@ -105,6 +109,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: t('navigation.profile'),
+          tabBarLabel: t('navigation.profile'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               name={focused ? 'person' : 'person-outline'} 
@@ -119,6 +124,7 @@ export default function TabLayout() {
           name="stores"
           options={{
             title: t('navigation.stores'),
+            tabBarLabel: t('navigation.stores'),
             tabBarIcon: ({ color, focused }) => (
               <Ionicons 
                 name={focused ? 'storefront' : 'storefront-outline'} 
@@ -133,6 +139,7 @@ export default function TabLayout() {
         name="wallet"
         options={{
           title: t('navigation.wallet'),
+          tabBarLabel: t('navigation.wallet'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               name={focused ? 'wallet' : 'wallet-outline'} 

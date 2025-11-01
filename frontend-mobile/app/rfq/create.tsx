@@ -76,17 +76,17 @@ export default function CreateRFQScreen() {
 
   const validateStep1 = () => {
     if (!formData.title.trim()) {
-      Alert.alert('Error', 'Please enter a title for your RFQ');
+      Alert.alert(t('messageBox.error', 'Error'), t('rfq.titleRequired', 'Please enter a title for your RFQ'));
       return false;
     }
 
     if (!formData.description.trim()) {
-      Alert.alert('Error', 'Please enter a description');
+      Alert.alert(t('messageBox.error', 'Error'), t('rfq.descriptionRequired', 'Please enter a description'));
       return false;
     }
 
     if (!formData.category) {
-      Alert.alert('Error', 'Please select a category');
+      Alert.alert(t('messageBox.error', 'Error'), t('rfq.categoryRequired', 'Please select a category'));
       return false;
     }
     
@@ -109,26 +109,30 @@ export default function CreateRFQScreen() {
 
   const pickImage = async () => {
     if (permissionStatus !== 'granted') {
-      Alert.alert('Permission Required', 'Please grant camera roll permissions to add images');
+      Alert.alert(t('rfq.permissionRequired', 'Permission Required'), t('rfq.permissionMessage', 'Please grant camera roll permissions to add images'));
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.8,
-    });
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const asset = result.assets[0];
-      const newAttachment: Attachment = {
-        id: Date.now().toString(),
-        type: 'image',
-        url: asset.uri,
-        name: asset.fileName || `image-${Date.now()}.jpg`,
-        size: asset.fileSize || 0,
-      };
-      setAttachments([...attachments, newAttachment]);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const newAttachment: Attachment = {
+          id: Date.now().toString(),
+          type: 'image',
+          url: asset.uri,
+          name: asset.fileName || `image-${Date.now()}.jpg`,
+          size: asset.fileSize || 0,
+        };
+        setAttachments([...attachments, newAttachment]);
+      }
+    } catch (error) {
+      // User canceled or error occurred
     }
   };
 
@@ -151,17 +155,17 @@ export default function CreateRFQScreen() {
         attachments: attachments.length > 0 ? attachments : undefined,
       });
       Alert.alert(
-        'Success',
-        'Your RFQ has been created successfully!',
+        t('messageBox.success', 'Success'),
+        t('rfq.created', 'Your RFQ has been created successfully!'),
         [
           {
-            text: 'OK',
+            text: t('common.done', 'OK'),
             onPress: () => router.back(),
           },
         ]
       );
     } catch (error) {
-      Alert.alert('Error', 'Failed to create RFQ. Please try again.');
+      Alert.alert(t('messageBox.error', 'Error'), t('rfq.createFailed', 'Failed to create RFQ. Please try again.'));
     } finally {
       setIsLoading(false);
     }

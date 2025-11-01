@@ -130,14 +130,18 @@ export default function SessionsScreen() {
       setLoading(true);
       const response = await authService.getSessions();
       if (response.success && response.data) {
-        setSessions(response.data);
-        setAnalytics(calculateAnalytics(response.data));
+        // Ensure response.data is an array
+        const sessionsData = Array.isArray(response.data) ? response.data : [];
+        setSessions(sessionsData);
+        setAnalytics(calculateAnalytics(sessionsData));
       } else {
         console.error('Failed to load sessions:', response.error);
+        setSessions([]); // Set empty array on error
         Alert.alert(t('errors.error', 'Error'), response.error || t('errors.serverError'));
       }
     } catch (error) {
       console.error('Failed to load sessions:', error);
+      setSessions([]); // Set empty array on error
       Alert.alert(t('errors.error', 'Error'), t('sessions.loadFailed', 'Failed to load sessions'));
     } finally {
       setLoading(false);
@@ -152,6 +156,11 @@ export default function SessionsScreen() {
 
   // Filter and search sessions
   const filteredSessions = useMemo(() => {
+    // Ensure sessions is always an array
+    if (!Array.isArray(sessions)) {
+      return [];
+    }
+
     let filtered = sessions;
 
     // Apply filter
@@ -331,10 +340,10 @@ export default function SessionsScreen() {
   };
 
   const getStatusText = (session: UserSession, deviceInfo: DeviceInfo) => {
-    if (session.is_revoked) return 'Revoked';
-    if (deviceInfo.isSuspicious) return 'Suspicious';
-    if (deviceInfo.isCurrentSession) return 'Current';
-    return 'Active';
+    if (session.is_revoked) return t('sessions.revokedStatus', 'Revoked');
+    if (deviceInfo.isSuspicious) return t('sessions.suspicious', 'Suspicious');
+    if (deviceInfo.isCurrentSession) return t('sessions.current', 'Current');
+    return t('sessions.activeStatus', 'Active');
   };
 
 
@@ -377,11 +386,11 @@ export default function SessionsScreen() {
             {item.ip_address && `IP: ${item.ip_address}`}
           </Text>
           <Text style={styles.sessionDetails}>
-            Created: {formatDate(item.created_at)}
+            {t('sessions.created', 'Created')}: {formatDate(item.created_at)}
           </Text>
           {item.last_seen_at && (
             <Text style={styles.sessionDetails}>
-              Last seen: {formatDate(item.last_seen_at)}
+              {t('sessions.lastSeen', 'Last Seen')}: {formatDate(item.last_seen_at)}
             </Text>
           )}
           
@@ -389,7 +398,7 @@ export default function SessionsScreen() {
             <View style={styles.warningBadge}>
               <Ionicons name="warning-outline" size={12} color={colors.warning[600]} />
               <Text style={[styles.warningText, { color: colors.warning[600] }]}>
-                Suspicious activity detected
+                {t('sessions.suspiciousActivityDetected', 'Suspicious activity detected')}
               </Text>
             </View>
           )}
@@ -682,9 +691,9 @@ export default function SessionsScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={isDark ? colors.text.primary : colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Active Sessions</Text>
+        <Text style={styles.headerTitle}>{t('sessions.activeSessions', 'Active Sessions')}</Text>
         <TouchableOpacity style={styles.logoutAllButton} onPress={logoutAllSessions}>
-          <Text style={styles.logoutAllText}>Logout All</Text>
+          <Text style={styles.logoutAllText}>{t('sessions.logoutAll', 'Logout All')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -694,19 +703,19 @@ export default function SessionsScreen() {
         <View style={styles.analyticsContainer}>
           <View style={styles.analyticsCard}>
             <Text style={styles.analyticsNumber}>{analytics.totalSessions}</Text>
-            <Text style={styles.analyticsLabel}>Total</Text>
+            <Text style={styles.analyticsLabel}>{t('sessions.total', 'Total')}</Text>
           </View>
           <View style={styles.analyticsCard}>
             <Text style={[styles.analyticsNumber, { color: colors.success[500] }]}>{analytics.activeSessions}</Text>
-            <Text style={styles.analyticsLabel}>Active</Text>
+            <Text style={styles.analyticsLabel}>{t('sessions.active', 'Active')}</Text>
           </View>
           <View style={styles.analyticsCard}>
             <Text style={[styles.analyticsNumber, { color: colors.error[500] }]}>{analytics.revokedSessions}</Text>
-            <Text style={styles.analyticsLabel}>Revoked</Text>
+            <Text style={styles.analyticsLabel}>{t('sessions.revoked', 'Revoked')}</Text>
           </View>
           <View style={styles.analyticsCard}>
             <Text style={[styles.analyticsNumber, { color: colors.warning[500] }]}>{analytics.suspiciousSessions}</Text>
-            <Text style={styles.analyticsLabel}>Suspicious</Text>
+            <Text style={styles.analyticsLabel}>{t('sessions.suspicious', 'Suspicious')}</Text>
           </View>
         </View>
 
@@ -715,7 +724,7 @@ export default function SessionsScreen() {
           <TouchableOpacity style={styles.securityButton} onPress={revokeSuspiciousSessions}>
             <Ionicons name="shield-outline" size={16} color={colors.background.light} />
             <Text style={styles.securityButtonText}>
-              Revoke {analytics.suspiciousSessions} Suspicious Session{analytics.suspiciousSessions > 1 ? 's' : ''}
+              {t('sessions.revokeSuspiciousCount', 'Revoke {{count}} Suspicious Session', { count: analytics.suspiciousSessions })}
             </Text>
           </TouchableOpacity>
         )}
@@ -727,7 +736,7 @@ export default function SessionsScreen() {
             onPress={() => setFilter('all')}
           >
             <Text style={[styles.filterButtonText, filter === 'all' && styles.filterButtonTextActive]}>
-              All ({analytics.totalSessions})
+              {t('sessions.filterAll', 'All')} ({analytics.totalSessions})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -735,7 +744,7 @@ export default function SessionsScreen() {
             onPress={() => setFilter('active')}
           >
             <Text style={[styles.filterButtonText, filter === 'active' && styles.filterButtonTextActive]}>
-              Active ({analytics.activeSessions})
+              {t('sessions.filterActive', 'Active')} ({analytics.activeSessions})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -743,7 +752,7 @@ export default function SessionsScreen() {
             onPress={() => setFilter('revoked')}
           >
             <Text style={[styles.filterButtonText, filter === 'revoked' && styles.filterButtonTextActive]}>
-              Revoked ({analytics.revokedSessions})
+              {t('sessions.filterRevoked', 'Revoked')} ({analytics.revokedSessions})
             </Text>
           </TouchableOpacity>
         </View>
@@ -753,7 +762,7 @@ export default function SessionsScreen() {
           <Ionicons name="search-outline" size={20} color={isDark ? colors.gray[400] : colors.gray[500]} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by device, IP, or browser..."
+            placeholder={t('sessions.searchPlaceholder', 'Search by device, IP, or browser...')}
             placeholderTextColor={isDark ? colors.gray[400] : colors.gray[500]}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -767,13 +776,13 @@ export default function SessionsScreen() {
 
         {/* Sessions List */}
         <Text style={styles.sectionTitle}>
-          Sessions ({filteredSessions.length})
+          {t('sessions.sessionsList', 'Sessions')} ({filteredSessions.length})
         </Text>
         
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary[500]} />
-            <Text style={styles.emptyStateText}>Loading sessions...</Text>
+            <Text style={styles.emptyStateText}>{t('sessions.loading', 'Loading sessions...')}</Text>
           </View>
         ) : filteredSessions.length > 0 ? (
           <FlatList
@@ -799,7 +808,7 @@ export default function SessionsScreen() {
               color={isDark ? colors.gray[400] : colors.gray[500]}
             />
             <Text style={styles.emptyStateText}>
-              {searchQuery ? 'No sessions match your search' : 'No sessions found'}
+              {searchQuery ? t('sessions.noSessionsMatch', 'No sessions match your search') : t('sessions.noSessions', 'No sessions found')}
             </Text>
           </View>
         )}
@@ -815,7 +824,7 @@ export default function SessionsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Session Details</Text>
+              <Text style={styles.modalTitle}>{t('sessions.sessionDetails', 'Session Details')}</Text>
               <TouchableOpacity onPress={() => setShowSessionDetails(false)}>
                 <Ionicons name="close" size={24} color={isDark ? colors.gray[400] : colors.gray[600]} />
               </TouchableOpacity>
@@ -828,48 +837,48 @@ export default function SessionsScreen() {
                   return (
                     <>
                       <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Device Type</Text>
+                        <Text style={styles.detailLabel}>{t('sessions.deviceType', 'Device Type')}</Text>
                         <Text style={styles.detailValue}>{deviceInfo.type}</Text>
                       </View>
                       <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Operating System</Text>
+                        <Text style={styles.detailLabel}>{t('sessions.operatingSystem', 'Operating System')}</Text>
                         <Text style={styles.detailValue}>{deviceInfo.os}</Text>
                       </View>
                       {deviceInfo.browser && (
                         <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>Browser</Text>
+                          <Text style={styles.detailLabel}>{t('sessions.browser', 'Browser')}</Text>
                           <Text style={styles.detailValue}>{deviceInfo.browser}</Text>
                         </View>
                       )}
                       <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>IP Address</Text>
-                        <Text style={styles.detailValue}>{selectedSession.ip_address || 'Unknown'}</Text>
+                        <Text style={styles.detailLabel}>{t('sessions.ipAddress', 'IP Address')}</Text>
+                        <Text style={styles.detailValue}>{selectedSession.ip_address || t('sessions.unknown', 'Unknown')}</Text>
                       </View>
                       <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Session ID</Text>
+                        <Text style={styles.detailLabel}>{t('sessions.sessionId', 'Session ID')}</Text>
                         <Text style={styles.detailValue}>{selectedSession.id}</Text>
                       </View>
                       <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Created</Text>
+                        <Text style={styles.detailLabel}>{t('sessions.created', 'Created')}</Text>
                         <Text style={styles.detailValue}>{formatDate(selectedSession.created_at)}</Text>
                       </View>
                       {selectedSession.last_seen_at && (
                         <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>Last Seen</Text>
+                          <Text style={styles.detailLabel}>{t('sessions.lastSeen', 'Last Seen')}</Text>
                           <Text style={styles.detailValue}>{formatDate(selectedSession.last_seen_at)}</Text>
                         </View>
                       )}
                       <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Status</Text>
+                        <Text style={styles.detailLabel}>{t('sessions.status', 'Status')}</Text>
                         <Text style={[styles.detailValue, { color: getStatusColor(selectedSession, deviceInfo) }]}>
                           {getStatusText(selectedSession, deviceInfo)}
                         </Text>
                       </View>
                       {deviceInfo.isSuspicious && (
                         <View style={styles.detailRow}>
-                          <Text style={styles.detailLabel}>Security Alert</Text>
+                          <Text style={styles.detailLabel}>{t('sessions.securityAlert', 'Security Alert')}</Text>
                           <Text style={[styles.detailValue, { color: colors.warning[500] }]}>
-                            Suspicious activity detected
+                            {t('sessions.suspiciousActivityDetected', 'Suspicious activity detected')}
                           </Text>
                         </View>
                       )}
